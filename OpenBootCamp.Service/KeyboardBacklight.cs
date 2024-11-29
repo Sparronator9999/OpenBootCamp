@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 
 namespace OpenBootCamp.Service
@@ -11,10 +11,7 @@ namespace OpenBootCamp.Service
         /// </summary>
         public byte Brightness
         {
-            get
-            {
-                return _brightness;
-            }
+            get => _brightness;
             set
             {
                 _brightness = value;
@@ -28,14 +25,15 @@ namespace OpenBootCamp.Service
         /// The amount to change <see cref="Brightness"/> by when calling
         /// <see cref="BrightnessUp"/> or <see cref="BrightnessDown"/>.
         /// </summary>
-        public byte Step { get; set; } = 16;
+        public byte Step { get; set; }
 
         private readonly MacHALDriver HAL;
 
-        public KeyboardBacklight(MacHALDriver hal, byte brightness)
+        public KeyboardBacklight(MacHALDriver hal, byte brightness, byte step = 16)
         {
             HAL = hal;
             Brightness = brightness;
+            Step = step;
         }
 
         public bool BrightnessUp()
@@ -56,6 +54,11 @@ namespace OpenBootCamp.Service
                 Brightness -= Step;
 
             return SetBrightness(Brightness);
+        }
+
+        public bool SetBacklightEnabled(bool enabled)
+        {
+            return enabled ? SetBrightness(Brightness) : SetBrightness(0);
         }
 
         private bool SetBrightness(byte brightness)

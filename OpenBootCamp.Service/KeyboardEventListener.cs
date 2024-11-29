@@ -1,5 +1,4 @@
 using OpenBootCamp.Service.Logs;
-using OpenBootCamp.Config;
 using System;
 using System.ComponentModel;
 using System.Linq;
@@ -61,26 +60,12 @@ namespace OpenBootCamp.Service
 
         private readonly Logger Log;
 
-        private readonly ObcConfig Config;
-
-        public KeyboardEventListener(AppleKeyboardDriver keyAgent, MacHALDriver hal, Logger logger, ObcConfig config)
+        public KeyboardEventListener(AppleKeyboardDriver keyAgent, MacHALDriver hal, Logger logger, KeyboardBacklight keylight)
         {
             KeyAgent = keyAgent;
             HAL = hal;
             Log = logger;
-            Config = config;
-            if (Config is null)
-            {
-                KeyLight = new(HAL, 0);
-            }
-            else
-            {
-                KeyLight = new(HAL, Config.KeyboardBrightness);
-                if (Config.KeyboardBrightnessStep != 0)
-                {
-                    KeyLight.Step = Config.KeyboardBrightnessStep;
-                }
-            }
+            KeyLight = keylight;
         }
 
         public void Start()
@@ -131,7 +116,7 @@ namespace OpenBootCamp.Service
 
             if (turnOffKeyLight)
             {
-                KeyLight.Brightness = 0;
+                KeyLight?.SetBacklightEnabled(false);
             }
 
             // perform cleanup (disposal of events, etc.)
@@ -166,12 +151,10 @@ namespace OpenBootCamp.Service
                         SetBrightness((int)(DisplayBrightness / 15f * 100));
                         break;
                     case 7:    // keyboard light up
-                        KeyLight.BrightnessUp();
-                        Config.KeyboardBrightness = KeyLight.Brightness;
+                        KeyLight?.BrightnessUp();
                         break;
                     case 8:    // keyboard light down
-                        KeyLight.BrightnessDown();
-                        Config.KeyboardBrightness = KeyLight.Brightness;
+                        KeyLight?.BrightnessDown();
                         break;
                     case 19:    // keyboard presence detected
                         break;

@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using OpenBootCamp.Service.Logs;
 using OpenBootCamp.Config;
 using System.ComponentModel;
@@ -16,7 +16,8 @@ namespace OpenBootCamp.Service
         private readonly AppleKeyboardDriver KeyMagic = new("AppleKeyboard");
         private readonly MacHALDriver HAL = new("MacHALDriver");
 
-        private KeyboardEventListener listener;
+        private KeyboardEventListener Listener;
+        private KeyboardBacklight KeyLight;
 
         private ObcConfig Config;
         private readonly string ConfPath = Path.Combine(
@@ -27,7 +28,6 @@ namespace OpenBootCamp.Service
         {
             CanHandlePowerEvent = true;
             CanShutdown = true;
-
             Log = logger;
         }
 
@@ -66,10 +66,10 @@ namespace OpenBootCamp.Service
 
             if (OpenDriver(KeyAgent, "KeyAgent") && OpenDriver(HAL, "MacHALDriver"))
             {
-                listener = new(KeyAgent, HAL, Log, Config);
-                listener.Start();
+                KeyLight = new(HAL, Config.KeyboardBrightness, Config.KeyboardBrightnessStep);
+                Listener = new(KeyAgent, HAL, Log, KeyLight);
+                Listener.Start();
             }
-
             Log.Info("Started the OpenBootCamp service.");
         }
 
@@ -86,9 +86,10 @@ namespace OpenBootCamp.Service
         private void StopService()
         {
             Log.Info("Stopping the OpenBootCamp service...");
-            listener?.Stop();
+            Listener?.Stop();
 
             Log.Info("Saving config...");
+            Config.KeyboardBrightness = KeyLight.Brightness;
             Config.Save(ConfPath);
 
             Log.Info("Unloading drivers...");
@@ -104,7 +105,14 @@ namespace OpenBootCamp.Service
 
         protected override bool OnPowerEvent(PowerBroadcastStatus powerStatus)
         {
-            Log.Debug($"A {powerStatus} power status event was received.");
+            switch (powerStatus)
+            {
+                case PowerBroadcastStatus.ResumeCritical:
+                case PowerBroadcastStatus.ResumeSuspend:
+                case PowerBroadcastStatus.ResumeAutomatic:
+                    KeyLight?.SetBacklightEnabled(true);
+                    break;
+            }
             return true;
         }
 
