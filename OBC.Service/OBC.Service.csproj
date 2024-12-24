@@ -25,6 +25,7 @@
         <Reference Include="System.Configuration.Install" />
         <Reference Include="System.Management" />
         <Reference Include="System.ServiceProcess" />
+        <Reference Include="System.Windows.Forms" />
     </ItemGroup>
     <ItemGroup>
         <Compile Update="ProjectInstaller.cs">
@@ -39,6 +40,6 @@
         <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\OpenBootCamp.Config\OpenBootCamp.Config.csproj" />
+      <ProjectReference Include="..\OBC.Config\OBC.Config.csproj" />
     </ItemGroup>
 </Project>

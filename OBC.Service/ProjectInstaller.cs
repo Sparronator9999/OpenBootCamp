@@ -2,7 +2,7 @@
 using System.Configuration.Install;
 using System.ServiceProcess;
 
-namespace OpenBootCamp.Service
+namespace OBC.Service
 {
     [RunInstaller(true)]
     public sealed class ProjectInstaller : Installer

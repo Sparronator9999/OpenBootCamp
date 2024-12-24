@@ -1,4 +1,4 @@
-namespace OpenBootCamp.Service.Logs
+namespace OBC.Service.Logs
 {
     /// <summary>
     /// The verbosity of logs

@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace OpenBootCamp.Service.Win32
+namespace OBC.Service.Win32
 {
     /// <summary>
     /// Wraps native Win32 functions from <c>advapi32.dll</c>.

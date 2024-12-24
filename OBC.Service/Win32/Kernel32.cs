@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace OpenBootCamp.Service.Win32
+namespace OBC.Service.Win32
 {
     /// <summary>
     /// Wraps native Win32 functions from <c>kernel32.dll</c>.

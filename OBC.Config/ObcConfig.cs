@@ -2,7 +2,7 @@
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace OpenBootCamp.Config
+namespace OBC.Config
 {
     public sealed class ObcConfig
     {

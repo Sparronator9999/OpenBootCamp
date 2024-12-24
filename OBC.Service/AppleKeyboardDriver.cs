@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 
-namespace OpenBootCamp.Service
+namespace OBC.Service
 {
     internal sealed class AppleKeyboardDriver : Driver
     {

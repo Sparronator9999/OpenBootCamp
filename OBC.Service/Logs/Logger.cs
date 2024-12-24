@@ -3,7 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 
-namespace OpenBootCamp.Service.Logs
+namespace OBC.Service.Logs
 {
     /// <summary>
     /// A simple logger class for writing logs to

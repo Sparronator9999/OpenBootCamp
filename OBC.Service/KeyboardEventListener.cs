@@ -1,17 +1,19 @@
-using OpenBootCamp.Service.Logs;
+using OBC.Service.Logs;
 using System;
-using System.ComponentModel;
 using System.Linq;
 using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OpenBootCamp.Service
+namespace OBC.Service
 {
     internal sealed class KeyboardEventListener : IDisposable
     {
-        private static readonly uint[] AppleKeyboardEventIOCtls =
-        [
+        private const int EVENT_COUNT = 30;
+
+        private static readonly uint[] KbdEventIOCtls =
+            new uint[EVENT_COUNT - 1]
+        {
             0xB403201F, // 0:  eject CD-ROM
             0xB4032043, // 1:  volume up (Windows 7 and lower?)
             0xB403204B, // 2:  volume down (Windows 7 and lower?)
@@ -42,19 +44,19 @@ namespace OpenBootCamp.Service
             0xB403211B,
             0xB4032123,
             0xB403212B,
-            // 28: stop event listener
-        ];
+            // 29: stop event listener
+        };
 
-        private readonly EventWaitHandle[] Events = new AutoResetEvent[AppleKeyboardEventIOCtls.Length + 1];
+        private readonly EventWaitHandle[] Events = new AutoResetEvent[EVENT_COUNT];
 
         private Task ListenerTask;
 
         private bool CleanupComplete;
 
-        private byte DisplayBrightness;
+        private byte DispBright;
 
         private readonly AppleKeyboardDriver KeyAgent;
-        private readonly MacHALDriver HAL;
+        //private readonly MacHALDriver HAL;
 
         private readonly KeyboardBacklight KeyLight;
 
@@ -63,7 +65,7 @@ namespace OpenBootCamp.Service
         public KeyboardEventListener(AppleKeyboardDriver keyAgent, MacHALDriver hal, Logger logger, KeyboardBacklight keylight)
         {
             KeyAgent = keyAgent;
-            HAL = hal;
+            //HAL = hal;
             Log = logger;
             KeyLight = keylight;
         }
@@ -83,22 +85,20 @@ namespace OpenBootCamp.Service
                 Events[i] = new AutoResetEvent(false);
             }
 
-            for (int i = 0; i < AppleKeyboardEventIOCtls.Length; i++)
+            for (int i = 0; i < KbdEventIOCtls.Length; i++)
             {
                 bool success = false;
                 Events[i].SafeWaitHandle.DangerousAddRef(ref success);
                 if (success)
                 {
-                    if (!KeyAgent.IOControl(AppleKeyboardEventIOCtls[i], Events[i].SafeWaitHandle.DangerousGetHandle(), 0))
+                    if (!KeyAgent.IOControl(KbdEventIOCtls[i], Events[i].SafeWaitHandle.DangerousGetHandle(), 0))
                     {
-                        Log.Error(
-                            $"DeviceIoControl failed for event {i}:\n" +
-                            $"Error {KeyAgent.ErrorCode}: {new Win32Exception(KeyAgent.ErrorCode).Message}");
+                        Log.Error(Strings.GetString("errEventInit"));
                     }
                 }
                 else
                 {
-                    Log.Error($"Failed to get event handle for event {i}.");
+                    Log.Error(Strings.GetString("errEventHandle"));
                 }
             }
 
@@ -109,7 +109,7 @@ namespace OpenBootCamp.Service
         public void Stop(bool turnOffKeyLight = true)
         {
             // signal the "stop listener" event
-            Events[28].Set();
+            Events[EVENT_COUNT].Set();
 
             // wait for the event listener to stop
             ListenerTask.Wait(Timeout.Infinite);
@@ -125,7 +125,7 @@ namespace OpenBootCamp.Service
 
         private void HandleEvents()
         {
-            DisplayBrightness = (byte)(GetBrightness() * 15 / 100);
+            DispBright = (byte)(GetBrightness() * 15 / 100);
 
             WorkerLog("Started listening for events.");
             while (true)
@@ -134,21 +134,29 @@ namespace OpenBootCamp.Service
                 switch (eventID)
                 {
                     case 0:     // eject dvd-rom
-                        WorkerLog("Received Eject button press, but CD-ROM eject not implemented yet!");
+                        WorkerLog(Strings.GetString("errCDEject"));
                         break;
                     case 3:     // display brightness up
-                        if (DisplayBrightness + 1 > 15)
-                            DisplayBrightness = 15;
+                        if (DispBright + 1 > 15)
+                        {
+                            DispBright = 15;
+                        }
                         else
-                            DisplayBrightness++;
-                        SetBrightness((int)(DisplayBrightness / 15f * 100));
+                        {
+                            DispBright++;
+                        }
+                        SetBrightness((int)(DispBright / 15f * 100));
                         break;
                     case 4:     // display brightness down
-                        if (DisplayBrightness - 1 < 0)
-                            DisplayBrightness = 0;
+                        if (DispBright - 1 < 0)
+                        {
+                            DispBright = 0;
+                        }
                         else
-                            DisplayBrightness--;
-                        SetBrightness((int)(DisplayBrightness / 15f * 100));
+                        {
+                            DispBright--;
+                        }
+                        SetBrightness((int)(DispBright / 15f * 100));
                         break;
                     case 7:    // keyboard light up
                         KeyLight?.BrightnessUp();
@@ -158,13 +166,13 @@ namespace OpenBootCamp.Service
                         break;
                     case 19:    // keyboard presence detected
                         break;
-                    case 28:    // shut down listener - signalled by Stop()
+                    case EVENT_COUNT:   // shut down listener - signalled by Stop()
                         WorkerLog("Stopping event listener...");
                         return;
                     case WaitHandle.WaitTimeout:
                         break;
                     default:
-                        WorkerLog($"Unhandled event (ID: {eventID}) was signalled.");
+                        WorkerLog(Strings.GetString("warnBadEvent"));
                         break;
                 }
             }
@@ -194,7 +202,7 @@ namespace OpenBootCamp.Service
             {
                 if (Events[i] is not null)
                 {
-                    if (i < AppleKeyboardEventIOCtls.Length)
+                    if (i < KbdEventIOCtls.Length)
                     {
                         // only dangerous release
                         Events[i].SafeWaitHandle.DangerousRelease();

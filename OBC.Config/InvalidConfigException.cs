@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace OpenBootCamp.Config
+namespace OBC.Config
 {
     /// <summary>
     /// The exception thrown when an invalid <see cref="YAMDCC_Config"/> is loaded.

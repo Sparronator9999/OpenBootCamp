@@ -14,7 +14,7 @@
         "resolved": "4.5.0",
         "contentHash": "221clPs1445HkTBZPL+K9sDBdJRB8UN8rgjO3ztB0CQ26z//fmJXtlsr6whGatscsKGBrhJl5bwJuKSA8mwFOw=="
       },
-      "openbootcamp.config": {
+      "obc.config": {
         "type": "Project",
         "dependencies": {
           "Microsoft.CSharp": "[4.7.0, )",

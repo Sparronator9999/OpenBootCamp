@@ -1,10 +1,10 @@
-using OpenBootCamp.Service.Win32;
+using OBC.Service.Win32;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 
-namespace OpenBootCamp.Service
+namespace OBC.Service
 {
     /// <summary>
     /// Contains functions to install and manage kernel-level device drivers.
@@ -84,7 +84,7 @@ namespace OpenBootCamp.Service
             if (string.IsNullOrEmpty(DriverPath))
             {
                 throw new ArgumentException(
-                    "The driver path is set to a null or empty string.", DriverPath);
+                    Strings.GetString("drvNullPath"), DriverPath);
             }
 
             // Make sure the file we're trying to install actually exists:
@@ -92,7 +92,7 @@ namespace OpenBootCamp.Service
 
             if (!File.Exists(fullPath))
             {
-                throw new FileNotFoundException($"{fullPath} was not found.", fullPath);
+                throw new FileNotFoundException(Strings.GetString("drvNotFound"), fullPath);
             }
 
             // Try to open the Service Control Manager:
@@ -231,7 +231,9 @@ namespace OpenBootCamp.Service
         public bool Open()
         {
             if (IsOpen)
+            {
                 return true;
+            }
 
             ErrorCode = 0;
 

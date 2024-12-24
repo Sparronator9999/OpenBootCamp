@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel;
 
-namespace OpenBootCamp.Service
+namespace OBC.Service
 {
     internal sealed class KeyboardBacklight
     {
@@ -39,9 +39,13 @@ namespace OpenBootCamp.Service
         public bool BrightnessUp()
         {
             if (Brightness + Step > 255)
+            {
                 Brightness = 255;
+            }
             else
+            {
                 Brightness += Step;
+            }
 
             return SetBrightness(Brightness);
         }
@@ -49,9 +53,13 @@ namespace OpenBootCamp.Service
         public bool BrightnessDown()
         {
             if (Brightness - Step < 0)
+            {
                 Brightness = 0;
+            }
             else
+            {
                 Brightness -= Step;
+            }
 
             return SetBrightness(Brightness);
         }
@@ -69,14 +77,13 @@ namespace OpenBootCamp.Service
                 // (both with null terminators)
                 0x4C, 0x4B, 0x53, 0x42, 0x00, brightness, 0x00
             ];
-            Console.WriteLine($"Setting keyboard backlight to {brightness}...");
+            Console.WriteLine(Strings.GetString("kbdBrightSet", brightness));
             bool success = HAL.IOControl(0x9c402458, inBuffer);
 
             if (!success)
             {
-                Console.WriteLine(
-                     "DeviceIoControl failed with error:\n" +
-                     $"{HAL.ErrorCode}: {new Win32Exception(HAL.ErrorCode).Message}");
+                Console.WriteLine(Strings.GetString("errIoCtl",
+                    HAL.ErrorCode, new Win32Exception(HAL.ErrorCode).Message));
             }
             return success;
         }

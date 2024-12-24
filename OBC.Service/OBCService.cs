@@ -1,12 +1,12 @@
 using Microsoft.Win32;
-using OpenBootCamp.Service.Logs;
-using OpenBootCamp.Config;
+using OBC.Service.Logs;
+using OBC.Config;
 using System.ComponentModel;
 using System.ServiceProcess;
 using System.IO;
 using System;
 
-namespace OpenBootCamp.Service
+namespace OBC.Service
 {
     internal sealed class OBCService : ServiceBase
     {
