@@ -4,27 +4,31 @@ An open-source implementation of some of Boot Camp's keyboard services in C#.
 
 ## Disclaimers
 
-- This program was developed by using clean-room reverse-engineering techniques, including decompiling Boot Camp services.
-- This program, repository and its authors are **not** affiliated with Apple Inc. in any way, shape, or form.
+- This program was developed by using clean-room reverse-engineering
+  techniques, including decompiling Boot Camp services.
+- This program, repository and its authors are **not** affiliated with Apple
+  Inc. in any way, shape, or form.
 
 ## Features
 
 OpenBootCamp currently implements the following features of Boot Camp Manager:
 
-- **Fn behaviour switching:** Switch whether the default Fn behaviour should be the standard Fn keys, or the special function printed on each key.
-- **Special Fn key handling:** This includes keys like the display and keyboard brightness keys.
+- **Fn behaviour switching:** Switch whether the default Fn behaviour should be
+  the standard Fn keys, or the special function printed on each key.
+- **Special Fn key handling:** This includes keys like the display brightness,
+  keyboard brightness, and optical drive eject keys.
 
 Additionally, the following bugs from the official Boot Camp Manager are fixed:
 
 - Keyboard backlight state is not remembered across reboots
-- Special Fn keys do not work before login (Apple's Boot Camp Manager doesn't run until a user logs in)
+- Special Fn keys do not work before login (Apple's Boot Camp Manager doesn't
+  run until a user logs in)
 
 <sub>along with introducing a whole lot of other bugs/missing features, but still...</sub>
 
 ## Planned features
 
 - Install instructions
-- Eject DVD drive on pressing the Eject button on the keyboard
 - Volume control on older Windows versions (7 and earlier?)
 - An overlay when adjusting keyboard backlight, screen brightness, and volume
   (when not already handled by Windows)
@@ -42,51 +46,64 @@ Additionally, the following bugs from the official Boot Camp Manager are fixed:
 
 ## Supported systems
 
-Only Apple computers that can run Windows are supported (i.e. any Intel Mac). Any non-Apple Windows systems are not supported (even if using a Magic Mouse/Trackpad/Keyboard).
+Only Apple computers that can run Windows are supported (i.e. any Intel Mac).
+Any non-Apple Windows systems are not supported (even if using a Magic
+Mouse/Trackpad/Keyboard).
 
 Windows 7 SP1 and later with .NET Framework 4.8 should work without issues.
 
-Windows Vista/XP may work if downgrading to .NET Framework 4.6 (for Vista SP2) or 4.0 (for XP SP3), but are unsupported.
+Windows Vista/XP may work if you downgrade the project to .NET Framework 4.6
+(for Vista SP2) or 4.0 (for XP SP3), but are currently unsupported.
 
 ## Additional requirements
 
 The following drivers are required for OpenBootCamp to work:
 
-- The Apple Keyboard driver (`Keymagic.sys`) for OSX Fn behaviour switching and enabling display brightness shortcuts on Windows 8 and later.
-- `KeyAgent.sys` for enabling other special Fn keys and for brightness/volume keys on Windows 7 and lower.
+- The Apple Keyboard driver (`Keymagic.sys`) for OSX Fn behaviour switching
+  and enabling display brightness shortcuts on Windows 8 and later.
+- `KeyAgent.sys` for enabling other special Fn keys and for brightness/volume
+  keys on Windows 7 and lower.
 - `MacHALDriver.sys` for keyboard backlight support.
 
 ## Download
 
-Development builds are available through [GitHub Actions](https://github.com/Sparronator9999/OpenBootCamp/actions).
+Downloads are currently unavailable.
+
+Please [compile the program yourself](#compile) in the meantime.
+
+<!--Development builds are available through [GitHub Actions](https://github.com/Sparronator9999/OpenBootCamp/actions).
 
 Alternatively, if you don't have a GitHub account, you can download the latest build from [nightly.link](https://nightly.link/Sparronator9999/OpenBootCamp/workflows/build/main?preview).
 
 (You probably want the `Release` build, unless you're debugging issues with the program)
 
-Alternatively, you can [build the program yourself](#build).
+Alternatively, you can [compile the program yourself](#compile).-->
 
-## Build
+## Compile
 
 ### Using Visual Studio
 
-1.  Install Visual Studio 2022 with the `.NET Desktop Development` workload checked.
+1.  Install Visual Studio 2022 with the `.NET Desktop Development` workload
+    checked.
 2.  Download the code repository, or clone it with `git`.
 3.  Extract the downloaded code, if needed.
-4.  Open `OpenBootCamp.sln` in Visual Studio.
+4.  Open `OBC.sln` in Visual Studio.
 5.  Click `Build` > `Build Solution` to build everything.
-6.  Your output, assuming default build settings, is located in `OpenBootCamp.Service\bin\Debug\net48\`.
+6.  Your output, assuming default build settings, is located in
+    `OBC.Service\bin\Debug\net48\`.
 7.  ???
 8.  Profit!
 
 ### From the command line
 
 1.  Follow steps 1-3 above to install Visual Studio and download the code.
-2.  Open `Developer Command Prompt for VS 2022` and `cd` to your project directory.
+2.  Open `Developer Command Prompt for VS 2022` and `cd` to your project
+    directory.
 3.  Run `msbuild /t:restore` to restore the solution, including NuGet packages.
-4.  Run `msbuild OpenBootCamp.sln /p:platform="Any CPU" /p:configuration="Debug"` to build
-    the project, substituting `Debug` with `Release` (or `Any CPU` with `x86` or `x64`) as 
-5.  Your output should be located in `OpenBootCamp.Service\bin\Debug\net48\` (or similar).
+4.  Run `msbuild OBC.sln /p:platform="Any CPU" /p:configuration="Debug"` to
+    build the project, substituting `Debug` with `Release` for a Release build
+    instead.
+5.  Your output should be located in `OBC.Service\bin\Debug\net48\` (or similar).
 6.  ???
 7.  Profit!
 
