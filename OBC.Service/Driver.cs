@@ -11,7 +11,7 @@ namespace OBC.Service
     /// <summary>
     /// Contains functions to install and manage kernel-level device drivers.
     /// </summary>
-    public class Driver
+    public class Driver : IDisposable
     {
         private readonly string DeviceName;
         private readonly string DriverPath = string.Empty;
@@ -240,7 +240,7 @@ namespace OBC.Service
                 hDevice = Kernel32.CreateFileW(
                     $"\\\\.\\{DeviceName}",
                     0xC0000000,
-                    FileShare.None,
+                    FileShare.ReadWrite,
                     IntPtr.Zero,
                     FileMode.Open,
                     FileAttributes.Normal,
@@ -429,6 +429,17 @@ namespace OBC.Service
         }
 
         ~Driver()
+        {
+            Close();
+        }
+
+
+
+#pragma warning disable IDE0079 // IDE0079: Remove unnecessary suppression
+#pragma warning disable CA1816  // CA1816: Dispose methods should call SuppressFinalize (the Driver may be re-opened after calling Dispose)
+        public void Dispose()
+#pragma warning restore CA1816
+#pragma warning restore IDE0079
         {
             Close();
         }

@@ -124,7 +124,7 @@
     <value>The driver path is set to a null or empty string.</value>
   </data>
   <data name="errCDEject" xml:space="preserve">
-    <value>Received Eject button press, but CD-ROM eject not implemented yet!</value>
+    <value>ERROR: failed to eject optical drive!</value>
   </data>
   <data name="errDirectRun" xml:space="preserve">
     <value>This is a service;

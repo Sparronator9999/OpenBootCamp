@@ -1,5 +1,6 @@
 using OBC.Service.Logs;
 using System;
+using System.IO;
 using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
@@ -61,7 +62,7 @@ namespace OBC.Service
 
         private readonly Logger Log;
 
-        public KeyboardEventListener(AppleKeyboardDriver keyAgent, MacHALDriver hal, Logger logger, KeyboardBacklight keylight)
+        public KeyboardEventListener(AppleKeyboardDriver keyAgent, Logger logger, KeyboardBacklight keylight)
         {
             KeyAgent = keyAgent;
             //HAL = hal;
@@ -132,8 +133,11 @@ namespace OBC.Service
                 int eventID = WaitHandle.WaitAny(Events);
                 switch (eventID)
                 {
-                    case 0:     // eject dvd-rom
-                        WorkerLog(Strings.GetString("errCDEject"));
+                    case 0:     // eject optical drive
+                        if (!EjectOpticalDrive())
+                        {
+                            WorkerLog(Strings.GetString("errCDEject"));
+                        }
                         break;
                     case 3:     // display brightness up
                         if (DispBright + 1 > 15)
@@ -215,6 +219,63 @@ namespace OBC.Service
         private void WorkerLog(string message)
         {
             Log.Debug($"[Event Listener] {message}");
+        }
+
+        private static bool EjectOpticalDrive()
+        {
+            DriveInfo[] drives = DriveInfo.GetDrives();
+
+            // eject the first optical drive we find
+            string cdRom = string.Empty;
+            foreach (DriveInfo drive in drives)
+            {
+                if (drive.DriveType == DriveType.CDRom)
+                {
+                    // remove trailing backslash from drive name
+                    // since it breaks the rest of the code if present :/
+                    cdRom = drive.Name.Remove(drive.Name.IndexOf('\\'));
+                    break;
+                }
+            }
+
+            if (cdRom == string.Empty)
+            {
+                return false;
+            }
+
+            using (Driver driver = new(cdRom))
+            {
+                if (!driver.Open())
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < 10; i++)
+                {
+                    // attempt to lock access to drive. this will
+                    // fail if any other app is using the drive
+                    if (!driver.IOControl(0x00090018))  // FSCTL_LOCK_VOLUME
+                    {
+                        continue;
+                    }
+                    // dismount drive to prevent access from other apps
+                    if (!driver.IOControl(0x00090020))  // FSCTL_DISMOUNT_VOLUME
+                    {
+                        continue;
+                    }
+
+                    // check if drive supports ejecting
+                    byte[] preventRemoval = [0];
+                    if (!driver.IOControl(0x002D4804, preventRemoval)) // IOCTL_STORAGE_MEDIA_REMOVAL
+                    {
+                        return false;
+                    }
+
+                    // actually eject the drive
+                    return driver.IOControl(0x002D4808);    //IOCTL_STORAGE_EJECT_MEDIA
+                }
+                return false;
+            }
         }
 
         private static int GetBrightness()

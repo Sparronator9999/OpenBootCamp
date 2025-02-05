@@ -67,7 +67,7 @@ namespace OBC.Service
             if (OpenDriver(KeyAgent, "KeyAgent") && OpenDriver(HAL, "MacHALDriver"))
             {
                 KeyLight = new(HAL, Config.KeyboardBrightness, Config.KeyboardBrightnessStep);
-                Listener = new(KeyAgent, HAL, Log, KeyLight);
+                Listener = new(KeyAgent, Log, KeyLight);
                 Listener.Start();
             }
             Log.Info("Started the OpenBootCamp service.");
