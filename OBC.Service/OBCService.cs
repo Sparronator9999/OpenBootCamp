@@ -89,7 +89,10 @@ namespace OBC.Service
             Listener?.Stop();
 
             Log.Info("Saving config...");
-            Config.KeyboardBrightness = KeyLight.Brightness;
+            if (KeyLight != null)
+            {
+                Config.KeyboardBrightness = KeyLight.Brightness;
+            }
             Config.Save(ConfPath);
 
             Log.Info("Unloading drivers...");

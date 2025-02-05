@@ -9,10 +9,10 @@ namespace OBC.Service
 {
     internal sealed class KeyboardEventListener : IDisposable
     {
-        private const int EVENT_COUNT = 30;
+        private const int EVENT_COUNT = 29;
 
         private static readonly uint[] KbdEventIOCtls =
-            new uint[EVENT_COUNT - 1]
+            new uint[EVENT_COUNT]
         {
             0xB403201F, // 0:  eject CD-ROM
             0xB4032043, // 1:  volume up (Windows 7 and lower?)
@@ -47,7 +47,7 @@ namespace OBC.Service
             // 29: stop event listener
         };
 
-        private readonly EventWaitHandle[] Events = new AutoResetEvent[EVENT_COUNT];
+        private readonly EventWaitHandle[] Events = new AutoResetEvent[EVENT_COUNT + 1];
 
         private Task ListenerTask;
 
