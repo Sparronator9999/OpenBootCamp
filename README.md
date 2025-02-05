@@ -25,13 +25,17 @@ Additionally, the following bugs from the official Boot Camp Manager are fixed:
 
 - Install instructions
 - Eject DVD drive on pressing the Eject button on the keyboard
-- Volume control on Windows 7
-- An overlay when adjusting keyboard backlight, screen brightness, and volume (when not already handled by Windows)
-- Ability to install Apple drivers (`KeyAgent.sys`, `MacHALDriver.sys`, etc.) automatically rather than having to install Boot Camp Services to get them
+- Volume control on older Windows versions (7 and earlier?)
+- An overlay when adjusting keyboard backlight, screen brightness, and volume
+  (when not already handled by Windows)
+- Ability to install Apple drivers (`KeyAgent.sys`, `MacHALDriver.sys`, etc.)
+  automatically rather than having to install Boot Camp Services to get them
 - A config application. Learn to edit XML for now.
 - A few power saving features:
-  - Turn off keyboard backlight when closing laptop lid (something which I would've thought would be done in hardware/drivers, but here we are)
-  - Set keyboard backlight state based on power source or battery charge (e.g. low battery, switching between AC and battery power)
+  - Turn off keyboard backlight when closing laptop lid (something which I
+    would've thought would be done in hardware/drivers, but here we are)
+  - Set keyboard backlight state based on power source or battery charge (e.g.
+    low battery, switching between AC and battery power)
   - Turn off keyboard backlight when keyboard is inactive
 - Smooth keyboard backlight animations
 - More that I haven't thought of yet
@@ -90,11 +94,11 @@ Alternatively, you can [build the program yourself](#build).
 
 ### How did you make this?!
 
-By decompiling `Bootcamp.exe` (located at `C:\Program Files\Boot Camp` on a Mac running Windows
-with Boot Camp installed) with [Binary Ninja](https://binary.ninja/).
+By decompiling `Bootcamp.exe` (located at `C:\Program Files\Boot Camp` on a Mac
+running Windows with Boot Camp installed) with [Binary Ninja](https://binary.ninja/).
 
-I was going to use [ghidra](https://github.com/NationalSecurityAgency/ghidra) like everyone else,
-but found Binary Ninja produced more readable code.
+I was going to use [ghidra](https://github.com/NationalSecurityAgency/ghidra),
+but found Binary Ninja produced more readable pseudo-code.
 
 I will go more in-depth in another document soon.
 
@@ -110,7 +114,7 @@ Also, reverse-engineering is fun :D (if you know what you're doing, that is)
 **You must install Boot Camp Services in order to use OpenBootCamp for now.**
 
 Download the Boot Camp support software for your Mac using Boot Camp Assistant
-(or [Brigadier](https://github.com/timsutton/brigadier if you're already on Windows),
+(or [Brigadier](https://github.com/timsutton/brigadier) if you're already on Windows),
 then navigate to `Drivers\Apple\BootCamp.msi` in 7-Zip. There should be a few .sys files,
 but the only ones we care about are `KeyAgent.sys` and `MacHALDriver.sys`. Copy these
 to the `Drivers` folder where OpenBootCamp is located.
@@ -136,17 +140,13 @@ and I might add your feature if I know how, have time, and I think it'll benefit
 Alternatively, create a [pull request](https://github.com/Sparronator9999/Sparronator9999/pulls)
 and add the feature yourself.
 
-### .NET?
+### .NET/Core?
 
 No.
 
-### .NET Core?
-
-*No.*
-
 ### Linux?
 
-🤦‍♂️
+🤦
 
 Linux *already has support* for Apple hardware natively (at least on the laptops I tested it on),
 so a Linux port would be pointless.
