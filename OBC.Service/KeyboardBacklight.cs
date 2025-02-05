@@ -25,7 +25,7 @@ namespace OBC.Service
         /// The amount to change <see cref="Brightness"/> by when calling
         /// <see cref="BrightnessUp"/> or <see cref="BrightnessDown"/>.
         /// </summary>
-        public byte Step { get; set; }
+        public byte Step;
 
         private readonly MacHALDriver HAL;
 
@@ -36,7 +36,7 @@ namespace OBC.Service
             Step = step;
         }
 
-        public bool BrightnessUp()
+        public void BrightnessUp()
         {
             if (Brightness + Step > 255)
             {
@@ -46,11 +46,9 @@ namespace OBC.Service
             {
                 Brightness += Step;
             }
-
-            return SetBrightness(Brightness);
         }
 
-        public bool BrightnessDown()
+        public void BrightnessDown()
         {
             if (Brightness - Step < 0)
             {
@@ -60,8 +58,6 @@ namespace OBC.Service
             {
                 Brightness -= Step;
             }
-
-            return SetBrightness(Brightness);
         }
 
         public bool SetBacklightEnabled(bool enabled)
@@ -78,7 +74,7 @@ namespace OBC.Service
                 0x4C, 0x4B, 0x53, 0x42, 0x00, brightness, 0x00
             ];
             Console.WriteLine(Strings.GetString("kbdBrightSet", brightness));
-            bool success = HAL.IOControl(0x9c402458, inBuffer);
+            bool success = HAL.IOControl(MacHALDriverIOCTL.Unknown9, inBuffer);
 
             if (!success)
             {

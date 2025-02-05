@@ -1,15 +1,16 @@
 using System;
-using System.Globalization;
 using System.IO;
 using System.IO.Compression;
+using System.Reflection;
 
 namespace OBC.Service.Logs
 {
+
     /// <summary>
     /// A simple logger class for writing logs to
     /// the console or a configurable file path.
     /// </summary>
-    public sealed class Logger : IDisposable
+    internal sealed class Logger : IDisposable
     {
         /// <summary>
         /// The <see cref="StreamWriter"/> to write log files to.
@@ -17,223 +18,177 @@ namespace OBC.Service.Logs
         private StreamWriter LogWriter;
 
         /// <summary>
-        /// Used with <c>lock</c> to prevent more than one thread
-        /// writing to the file at once.
+        /// Used with <see langword="lock"/> to prevent more
+        /// than one thread writing to the console at once.
         /// </summary>
-        private readonly object
-            fileLock = new(),
-            consoleLock = new();
+        private readonly object conLock = new();
 
         /// <summary>
         /// The newline characters to split provided log message lines by.
         /// </summary>
-        private static readonly char[] NewlineChars = ['\r', '\n'];
-
-        private static string LogString(string text, LogLevel level, bool showDate) =>
-            (showDate ? $"[{DateTime.Now:dd/MM/yyyy @ HH:mm:ss.fff}] " : "") + $"[{level}]".PadRight(8).ToUpper(CultureInfo.InvariantCulture) + text;
+        private static readonly char[] NewLine = ['\r', '\n'];
 
         /// <summary>
-        /// The path to which the log file will be written.
+        /// The directory in which log files are saved.
         /// </summary>
-        public string LogDir { get; set; } = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "Sparronator9999", "OpenBootCamp", "Logs");
+        public string LogDir;
 
-        private string LogPath => Path.Combine(LogDir, AppDomain.CurrentDomain.FriendlyName);
+        /// <summary>
+        /// The base name of the log file.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Log files will have the <c>.log</c> extension appended.
+        /// </para>
+        /// <para>
+        /// Archives will have a number appended before the <c>.log</c>
+        /// extension, with higher numbers indicating older logs.
+        /// </para>
+        /// </remarks>
+        public string LogName;
+
+        private string LogPath => Path.Combine(LogDir, LogName);
 
         /// <summary>
         /// The maximum number of logs to archive.
         /// </summary>
-        public int MaxArchivedLogs { get; set; } = 9;
+        public int MaxArchived = 9;
 
         /// <summary>
         /// How verbose should console logs be?
         /// </summary>
-        public LogLevel ConsoleLogLevel { get; set; } = LogLevel.Info;
+        public LogLevel ConsoleLevel = LogLevel.INFO;
 
         /// <summary>
         /// How verbose should logs written to disk be?
         /// </summary>
-        public LogLevel FileLogLevel { get; set; } = LogLevel.Info;
+        public LogLevel FileLevel = LogLevel.INFO;
 
         /// <summary>
         /// Should the log time be shown in console logs?
         /// </summary>
-        public bool ShowTimeInConsole { get; set; }
+        public bool TimeToConsole;
 
         /// <summary>
         /// Should the log time be shown in logs written to disk?
         /// </summary>
-        public bool ShowTimeInFile { get; set; } = true;
+        public bool TimeToFile = true;
+
+        public Logger()
+        {
+            string exePath = Assembly.GetEntryAssembly().Location;
+
+            LogDir = Path.GetDirectoryName(exePath);
+            LogName = Path.GetFileName(exePath);
+        }
 
         /// <summary>
         /// Writes a Debug event to the <see cref="Logger"/>.
         /// </summary>
-        /// <param name="message">The event to write to the log.</param>
-        public void Debug(string message)
+        /// <param name="msg">
+        /// The message to write to the log.
+        /// </param>
+        public void Debug(string msg)
         {
-            if (FileLogLevel >= LogLevel.Debug)
+            if (FileLevel >= LogLevel.DEBUG)
             {
-                WriteFile(message, LogLevel.Debug);
+                LogFile(msg, LogLevel.DEBUG);
             }
 
-            if (ConsoleLogLevel >= LogLevel.Debug)
+            if (ConsoleLevel >= LogLevel.DEBUG)
             {
-                WriteConsole(message, LogLevel.Debug);
+                LogConsole(msg, LogLevel.DEBUG);
             }
-        }
-
-        /// <summary>
-        /// Writes a Debug event to the <see cref="Logger"/>,
-        /// replacing format items with the objects in <paramref name="args"/>.
-        /// </summary>
-        /// <remarks>
-        /// Equivalent to passing a <see cref="string.Format(string, object[])"/>
-        /// to the <paramref name="message"/> argument.
-        /// </remarks>
-        /// <param name="message">The event to write to the log.</param>
-        /// <param name="args">The objects to format.</param>
-        public void Debug(string message, params object[] args)
-        {
-            Debug(string.Format(CultureInfo.InvariantCulture, message, args));
         }
 
         /// <summary>
         /// Writes an Info event to the <see cref="Logger"/>.
         /// </summary>
-        /// <param name="message">The event to write to the log.</param>
-        public void Info(string message)
+        /// <param name="msg">
+        /// The message to write to the log.
+        /// </param>
+        public void Info(string msg)
         {
-            if (FileLogLevel >= LogLevel.Info)
+            if (FileLevel >= LogLevel.INFO)
             {
-                WriteFile(message, LogLevel.Info);
+                LogFile(msg, LogLevel.INFO);
             }
 
-            if (ConsoleLogLevel >= LogLevel.Info)
+            if (ConsoleLevel >= LogLevel.INFO)
             {
-                WriteConsole(message, LogLevel.Info);
+                LogConsole(msg, LogLevel.INFO);
             }
-        }
-
-        /// <summary>
-        /// Writes an Info event to the <see cref="Logger"/>,
-        /// replacing format items with the objects in <paramref name="args"/>.
-        /// </summary>
-        /// <remarks>
-        /// Equivalent to passing a <see cref="string.Format(string, object[])"/>
-        /// to the <paramref name="message"/> argument.
-        /// </remarks>
-        /// <param name="message">The event to write to the log.</param>
-        /// <param name="args">The objects to format.</param>
-        public void Info(string message, params object[] args)
-        {
-            Info(string.Format(CultureInfo.InvariantCulture, message, args));
         }
 
         /// <summary>
         /// Writes a Warning to the <see cref="Logger"/>.
         /// </summary>
-        /// <param name="message">The event to write to the log.</param>
-        public void Warn(string message)
+        /// <param name="msg">
+        /// The message to write to the log.
+        /// </param>
+        public void Warn(string msg)
         {
-            if (FileLogLevel >= LogLevel.Warn)
+            if (FileLevel >= LogLevel.WARN)
             {
-                WriteFile(message, LogLevel.Warn);
+                LogFile(msg, LogLevel.WARN);
             }
 
-            if (ConsoleLogLevel >= LogLevel.Warn)
+            if (ConsoleLevel >= LogLevel.WARN)
             {
-                WriteConsole(message, LogLevel.Warn);
+                LogConsole(msg, LogLevel.WARN);
             }
-        }
-
-        /// <summary>
-        /// Writes a Warning to the <see cref="Logger"/>,
-        /// replacing format items with the objects in <paramref name="args"/>.
-        /// </summary>
-        /// <remarks>
-        /// Equivalent to passing a <see cref="string.Format(string, object[])"/>
-        /// to the <paramref name="message"/> argument.
-        /// </remarks>
-        /// <param name="message">The event to write to the log.</param>
-        /// <param name="args">The objects to format.</param>
-        public void Warn(string message, params object[] args)
-        {
-            Warn(string.Format(CultureInfo.InvariantCulture, message, args));
         }
 
         /// <summary>
         /// Writes an Error to the <see cref="Logger"/>.
         /// </summary>
-        /// <param name="message">The event to write to the log.</param>
-        public void Error(string message)
+        /// <param name="msg">
+        /// The message to write to the log.
+        /// </param>
+        public void Error(string msg)
         {
-            if (FileLogLevel >= LogLevel.Error)
+            if (FileLevel >= LogLevel.ERROR)
             {
-                WriteFile(message, LogLevel.Error);
+                LogFile(msg, LogLevel.ERROR);
             }
 
-            if (ConsoleLogLevel >= LogLevel.Error)
+            if (ConsoleLevel >= LogLevel.ERROR)
             {
-                WriteConsole(message, LogLevel.Error);
+                LogConsole(msg, LogLevel.ERROR);
             }
         }
 
         /// <summary>
-        /// Writes an Error to the <see cref="Logger"/>,
-        /// replacing format items with the objects in <paramref name="args"/>.
-        /// </summary>
-        /// <remarks>
-        /// Equivalent to passing a <see cref="string.Format(string, object[])"/>
-        /// to the <paramref name="message"/> argument.
-        /// </remarks>
-        /// <param name="message">The event to write to the log.</param>
-        /// <param name="args">The objects to format.</param>
-        public void Error(string message, params object[] args)
-        {
-            Error(string.Format(CultureInfo.InvariantCulture, message, args));
-        }
-
-        /// <summary>
-        /// Writes a Fatal Error to the <see cref="Logger"/>. Use when an
+        /// Writes a Fatal error to the <see cref="Logger"/>. Use when an
         /// application is about to terminate due to a fatal error.
         /// </summary>
-        /// <param name="message">The event to write to the log.</param>
-        public void Fatal(string message)
+        /// <param name="msg">
+        /// The message to write to the log.
+        /// </param>
+        public void Fatal(string msg)
         {
-            if (FileLogLevel >= LogLevel.Fatal)
+            if (FileLevel >= LogLevel.FATAL)
             {
-                WriteFile(message, LogLevel.Fatal);
+                LogFile(msg, LogLevel.FATAL);
             }
 
-            if (ConsoleLogLevel >= LogLevel.Fatal)
+            if (ConsoleLevel >= LogLevel.FATAL)
             {
-                WriteConsole(message, LogLevel.Fatal);
+                LogConsole(msg, LogLevel.FATAL);
             }
         }
 
-        /// <summary>
-        /// Writes a Fatal Error to the <see cref="Logger"/>,
-        /// replacing format items with the objects in <paramref name="args"/>.
-        /// Use when an application is about to terminate due to a fatal error.
-        /// </summary>
-        /// <remarks>
-        /// Equivalent to passing a <see cref="string.Format(string, object[])"/>
-        /// to the <paramref name="message"/> argument.
-        /// </remarks>
-        /// <param name="message">The event to write to the log.</param>
-        /// <param name="args">The objects to format.</param>
-        public void Fatal(string message, params object[] args)
+        private static string LogString(string str, LogLevel level, bool date)
         {
-            Fatal(string.Format(CultureInfo.InvariantCulture, message, args));
+            return $"{(date ? $"[{DateTime.Now:dd/MM/yyyy HH:mm:ss.fff}] " : "")}{$"[{level}]",-8} {str}";
         }
 
         /// <summary>
         /// Deletes all archived logs (files ending with .[number].log.gz).
         /// </summary>
-        public void DeleteArchivedLogs()
+        public void DeleteArchived()
         {
-            for (int i = 1; i <= MaxArchivedLogs; i++)
+            for (int i = 1; i <= MaxArchived; i++)
             {
                 try
                 {
@@ -243,52 +198,63 @@ namespace OBC.Service.Logs
             }
         }
 
-        private void WriteFile(string message, LogLevel level)
+        private void LogFile(string msg, LogLevel level)
         {
-            lock (fileLock)
+            if (msg is null)
             {
-                if (LogWriter is null || LogWriter == null || LogWriter.Equals(null))
-                {
-                    InitLogFile();
-                }
+                return;
+            }
 
-                foreach (string str in message.Split(NewlineChars, StringSplitOptions.RemoveEmptyEntries))
+            if (LogWriter is null)
+            {
+                InitLogFile();
+            }
+
+            lock (LogWriter)
+            {
+                foreach (string str in msg.Split(NewLine, StringSplitOptions.RemoveEmptyEntries))
                 {
-                    LogWriter.WriteLine(LogString(str, level, ShowTimeInFile));
+                    LogWriter.WriteLine(LogString(str, level, TimeToFile));
                 }
             }
         }
 
-        private void WriteConsole(string message, LogLevel level)
+        private void LogConsole(string msg, LogLevel level)
         {
-            lock (consoleLock)
+            if (msg is null)
             {
-                ConsoleColor bgColour = Console.BackgroundColor;
-                ConsoleColor fgColour = Console.ForegroundColor;
+                return;
+            }
+
+            lock (conLock)
+            {
+                ConsoleColor
+                    bgColour = Console.BackgroundColor,
+                fgColour = Console.ForegroundColor;
 
                 switch (level)
                 {
-                    case LogLevel.Fatal:
+                    case LogLevel.FATAL:
                         Console.BackgroundColor = ConsoleColor.Yellow;
-                        Console.ForegroundColor = ConsoleColor.DarkBlue;
+                        Console.ForegroundColor = ConsoleColor.DarkRed;
                         break;
-                    case LogLevel.Error:
+                    case LogLevel.ERROR:
                         Console.ForegroundColor = ConsoleColor.Red;
                         break;
-                    case LogLevel.Warn:
+                    case LogLevel.WARN:
                         Console.ForegroundColor = ConsoleColor.Yellow;
                         break;
-                    case LogLevel.Info:
+                    case LogLevel.INFO:
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
-                    case LogLevel.Debug:
+                    case LogLevel.DEBUG:
                         Console.ForegroundColor = ConsoleColor.DarkGray;
                         break;
                 }
 
-                foreach (string str in message.Split(NewlineChars, StringSplitOptions.RemoveEmptyEntries))
+                foreach (string str in msg.Split(NewLine, StringSplitOptions.RemoveEmptyEntries))
                 {
-                    Console.WriteLine(LogString(str, level, ShowTimeInConsole));
+                    Console.WriteLine(LogString(str, level, TimeToConsole));
                 }
 
                 Console.BackgroundColor = bgColour;
@@ -302,13 +268,16 @@ namespace OBC.Service.Logs
         /// </summary>
         private void InitLogFile()
         {
+            // create log directory if it doesn't exist already
+            Directory.CreateDirectory(LogDir);
+
             // Rename old log files, and delete the oldest file if
             // there's too many log files
-            for (int i = MaxArchivedLogs; i >= 0; i--)
+            for (int i = MaxArchived; i >= 0; i--)
             {
                 try
                 {
-                    if (i == MaxArchivedLogs)
+                    if (i == MaxArchived)
                     {
                         File.Delete($"{LogPath}.{i}.log.gz");
                     }
@@ -318,28 +287,21 @@ namespace OBC.Service.Logs
                     }
                 }
                 catch (FileNotFoundException) { }
-                catch (DirectoryNotFoundException) { }
             }
 
             try
             {
-                FileInfo fi = new($"{LogPath}.log");
-
                 // Set up file streams
-                FileStream original = fi.OpenRead();
-                FileStream compressed = File.Create($"{LogPath}.{1}.log.gz");
-                GZipStream gzStream = new(compressed, CompressionLevel.Optimal);
-
-                // Compress the file
-                original.CopyTo(gzStream);
-
-                // Close file streams
-                gzStream.Close();
-                compressed.Close();
-                original.Close();
+                using (FileStream original = File.OpenRead($"{LogPath}.log"))
+                using (FileStream compressed = File.Create($"{LogPath}.{1}.log.gz"))
+                using (GZipStream gzStream = new(compressed, CompressionLevel.Optimal))
+                {
+                    // Compress the file
+                    original.CopyTo(gzStream);
+                }
 
                 // Delete the unarchived copy of the log
-                fi.Delete();
+                File.Delete($"{LogPath}.log");
             }
             catch (FileNotFoundException)
             {
@@ -347,18 +309,15 @@ namespace OBC.Service.Logs
                 // do nothing to avoid crash
             }
 
-            // if anyone knows why the fuck directory.createdirectory
-            // is doing nothing when running as yamdccsvc.exe and
-            // pretending everything is ok i would LOVE to know
-            // (workaround in YAMDCC.GUI/Program.cs)
-            Directory.CreateDirectory(LogDir);
-
             LogWriter = new StreamWriter($"{LogPath}.log")
             {
                 AutoFlush = true
             };
         }
 
+        /// <summary>
+        /// Releases all resources used by this <see cref="Logger"/> instance.
+        /// </summary>
         public void Dispose()
         {
             LogWriter.Dispose();

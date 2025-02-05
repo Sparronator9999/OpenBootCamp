@@ -10,45 +10,29 @@ namespace OBC.Service.Win32
     /// </summary>
     internal static class Kernel32
     {
-        [DllImport("kernel32.dll",
-            ExactSpelling = true, SetLastError = true)]
-        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        [DllImport("Kernel32", ExactSpelling = true, SetLastError = true)]
         internal static extern bool CloseHandle(IntPtr hObject);
 
-        [DllImport("kernel32.dll",
-            CharSet = CharSet.Unicode, ExactSpelling = true,
-            EntryPoint = "CreateFileW", SetLastError = true)]
-        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        internal static extern IntPtr CreateFile(
+        [DllImport("Kernel32", ExactSpelling = true, SetLastError = true,
+            CharSet = CharSet.Unicode)]
+        internal static extern IntPtr CreateFileW(
             string lpFileName,
-            [MarshalAs(UnmanagedType.U4)] GenericAccessRights dwDesiredAccess,
-            [MarshalAs(UnmanagedType.U4)] FileShare dwShareMode,
-            [Optional] IntPtr lpSecurityAttributes,
-            [MarshalAs(UnmanagedType.U4)] FileMode dwCreationDisposition,
-            [MarshalAs(UnmanagedType.U4)] FileAttributes dwFlagsAndAttributes,
-            [Optional] IntPtr hTemplateFile);
+            uint dwDesiredAccess,
+            FileShare dwShareMode,
+            IntPtr lpSecurityAttributes,
+            FileMode dwCreationDisposition,
+            FileAttributes dwFlagsAndAttributes,
+            IntPtr hTemplateFile);
 
-        [DllImport("kernel32.dll",
-            ExactSpelling = true, SetLastError = true)]
-        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        [return: MarshalAs(UnmanagedType.Bool)]
+        [DllImport("Kernel32", ExactSpelling = true, SetLastError = true)]
         internal static extern unsafe bool DeviceIoControl(
             IntPtr hDevice,
             uint dwIoControlCode,
-            [Optional] void* lpInBuffer,
+            void* lpInBuffer,
             uint nInBufferSize,
-            [Optional] void* lpOutBuffer,
+            void* lpOutBuffer,
             uint nOutBufferSize,
-            [Optional] out uint lpBytesReturned,
-            [Optional] NativeOverlapped* lpOverlapped);
-
-        internal enum GenericAccessRights : uint
-        {
-            None = 0,
-            All = 0x10000000,
-            Execute = 0x20000000,
-            Write = 0x40000000,
-            Read = 0x80000000,
-        }
+            out uint lpBytesReturned,
+            NativeOverlapped* lpOverlapped);
     }
 }

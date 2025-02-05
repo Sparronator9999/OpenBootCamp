@@ -1,6 +1,5 @@
 using OBC.Service.Logs;
 using System;
-using System.Linq;
 using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
@@ -112,7 +111,7 @@ namespace OBC.Service
             Events[EVENT_COUNT].Set();
 
             // wait for the event listener to stop
-            ListenerTask.Wait(Timeout.Infinite);
+            ListenerTask.Wait();
 
             if (turnOffKeyLight)
             {
@@ -130,7 +129,7 @@ namespace OBC.Service
             WorkerLog("Started listening for events.");
             while (true)
             {
-                int eventID = WaitHandle.WaitAny(Events, Timeout.Infinite);
+                int eventID = WaitHandle.WaitAny(Events);
                 switch (eventID)
                 {
                     case 0:     // eject dvd-rom
@@ -220,29 +219,33 @@ namespace OBC.Service
 
         private static int GetBrightness()
         {
-            using ManagementClass mclass = new("WmiMonitorBrightness")
+            using (ManagementClass mclass = new("WmiMonitorBrightness")
             {
                 Scope = new ManagementScope(@"\\.\root\wmi")
-            };
-            using ManagementObjectCollection instances = mclass.GetInstances();
-            foreach (ManagementObject instance in instances.Cast<ManagementObject>())
+            })
+            using (ManagementObjectCollection instances = mclass.GetInstances())
             {
-                return (byte)instance.GetPropertyValue("CurrentBrightness");
+                foreach (ManagementBaseObject instance in instances)
+                {
+                    return (byte)instance.GetPropertyValue("CurrentBrightness");
+                }
+                return 0;
             }
-            return 0;
         }
 
         private static void SetBrightness(int brightness)
         {
-            using ManagementClass mclass = new("WmiMonitorBrightnessMethods")
+            using (ManagementClass mclass = new("WmiMonitorBrightnessMethods")
             {
                 Scope = new ManagementScope(@"\\.\root\wmi")
-            };
-            using ManagementObjectCollection instances = mclass.GetInstances();
-            object[] args = [1, brightness];
-            foreach (ManagementObject instance in instances.Cast<ManagementObject>())
+            })
+            using (ManagementObjectCollection instances = mclass.GetInstances())
             {
-                instance.InvokeMethod("WmiSetBrightness", args);
+                foreach (ManagementBaseObject instance in instances)
+                {
+                    ((ManagementObject)instance).InvokeMethod(
+                        "WmiSetBrightness", [1, brightness]);
+                }
             }
         }
     }

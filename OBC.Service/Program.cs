@@ -1,5 +1,6 @@
 using OBC.Service.Logs;
 using System;
+using System.IO;
 using System.ServiceProcess;
 using System.Windows.Forms;
 
@@ -9,8 +10,11 @@ namespace OBC.Service
     {
         private static readonly Logger Log = new()
         {
-            ConsoleLogLevel = LogLevel.None,
-            FileLogLevel = LogLevel.Debug,
+            ConsoleLevel = LogLevel.NONE,
+            FileLevel = LogLevel.DEBUG,
+            LogDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                "Sparronator9999", "OpenBootCamp", "Logs"),
         };
 
         /// <summary>
@@ -25,7 +29,8 @@ namespace OBC.Service
             }
             else
             {
-                AppDomain.CurrentDomain.UnhandledException += LogUnhandledException;
+                AppDomain.CurrentDomain.UnhandledException +=
+                    new UnhandledExceptionEventHandler(LogUnhandledException);
                 Log.Info(Strings.GetString("svcVer", Environment.OSVersion));
 
                 ServiceBase.Run(new OBCService(Log));

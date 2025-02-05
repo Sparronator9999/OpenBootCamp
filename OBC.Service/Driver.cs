@@ -4,12 +4,14 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 
+[assembly: DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+
 namespace OBC.Service
 {
     /// <summary>
     /// Contains functions to install and manage kernel-level device drivers.
     /// </summary>
-    public class Driver : IDisposable
+    public class Driver
     {
         private readonly string DeviceName;
         private readonly string DriverPath = string.Empty;
@@ -18,7 +20,7 @@ namespace OBC.Service
         /// <summary>
         /// Gets whether the driver connection is open.
         /// </summary>
-        public bool IsOpen { get; private set; }
+        public bool IsOpen => hDevice != IntPtr.Zero && hDevice != (IntPtr)(-1);
 
         /// <summary>
         /// Gets whether the driver is installed to the computer.
@@ -96,7 +98,7 @@ namespace OBC.Service
             }
 
             // Try to open the Service Control Manager:
-            IntPtr hSCM = AdvApi32.OpenSCManager(null, null, AdvApi32.SCMAccess.All);
+            IntPtr hSCM = AdvApi32.OpenSCManagerW(null, null, 0xF003F);
             if (hSCM == IntPtr.Zero)
             {
                 // the SCM connection wasn't opened
@@ -106,12 +108,8 @@ namespace OBC.Service
             }
 
             // Try to create the service:
-            IntPtr hSvc = AdvApi32.CreateService(
-                hSCM, DeviceName, DeviceName,
-                AdvApi32.ServiceAccess.All,
-                AdvApi32.ServiceType.KernelDriver,
-                AdvApi32.ServiceStartType.DemandStart,
-                AdvApi32.ServiceError.Normal,
+            IntPtr hSvc = AdvApi32.CreateServiceW(
+                hSCM, DeviceName, DeviceName, 0xF01FF, 1, 3, 1,
                 DriverPath, null, null, null, null, null);
 
             if (hSvc == IntPtr.Zero)
@@ -119,7 +117,7 @@ namespace OBC.Service
                 ErrorCode = Marshal.GetLastWin32Error();
                 if (ErrorCode == 1073)  // ERROR_SERVICE_EXISTS
                 {
-                    hSvc = AdvApi32.OpenService(hSCM, DeviceName, AdvApi32.ServiceAccess.All);
+                    hSvc = AdvApi32.OpenServiceW(hSCM, DeviceName, 0xF01FF);
                     if (hSvc == IntPtr.Zero)
                     {
                         ErrorCode = Marshal.GetLastWin32Error();
@@ -137,7 +135,7 @@ namespace OBC.Service
             IsInstalled = true;
 
             // Try to start the service:
-            if (!AdvApi32.StartService(hSvc, 0, IntPtr.Zero))
+            if (!AdvApi32.StartServiceW(hSvc, 0, IntPtr.Zero))
             {
                 int error = Marshal.GetLastWin32Error();
                 if (error != 1056)  // ERROR_SERVICE_ALREADY_RUNNING
@@ -181,7 +179,7 @@ namespace OBC.Service
             // Close the driver file handle (if it's open)
             Close();
 
-            IntPtr hSCM = AdvApi32.OpenSCManager(null, null, AdvApi32.SCMAccess.All);
+            IntPtr hSCM = AdvApi32.OpenSCManagerW(null, null, 0xF003F);
             if (hSCM == IntPtr.Zero)
             {
                 // the SCM connection wasn't opened
@@ -191,7 +189,7 @@ namespace OBC.Service
             }
 
             // Try to open the service:
-            IntPtr hSvc = AdvApi32.OpenService(hSCM, DeviceName, AdvApi32.ServiceAccess.All);
+            IntPtr hSvc = AdvApi32.OpenServiceW(hSCM, DeviceName, 0xF01FF);
             if (hSvc == IntPtr.Zero)
             {
                 // Ignore ERROR_SERVICE_DOES_NOT_EXIST:
@@ -211,7 +209,7 @@ namespace OBC.Service
             }
 
             // Stop and delete the service:
-            AdvApi32.ControlService(hSvc, AdvApi32.ServiceControlCode.Stop, out _);
+            AdvApi32.ControlService(hSvc, 1, IntPtr.Zero);
             AdvApi32.DeleteService(hSvc);
             IsInstalled = false;
 
@@ -237,25 +235,22 @@ namespace OBC.Service
 
             ErrorCode = 0;
 
-            if (hDevice == IntPtr.Zero)
+            if (!IsOpen)
             {
-                hDevice = Kernel32.CreateFile(
+                hDevice = Kernel32.CreateFileW(
                     $"\\\\.\\{DeviceName}",
-                    Kernel32.GenericAccessRights.Read | Kernel32.GenericAccessRights.Write,
+                    0xC0000000,
                     FileShare.None,
                     IntPtr.Zero,
                     FileMode.Open,
                     FileAttributes.Normal,
                     IntPtr.Zero);
 
-                // Apparently CreateFileW() can return -1 instead of 0 for some reason
-                if (hDevice == IntPtr.Zero || hDevice == new IntPtr(-1))
+                if (!IsOpen)
                 {
                     ErrorCode = Marshal.GetLastWin32Error();
                     return false;
                 }
-
-                IsOpen = true;
                 return true;
             }
             return true;
@@ -266,11 +261,10 @@ namespace OBC.Service
         /// </summary>
         public void Close()
         {
-            if (hDevice != IntPtr.Zero)
+            if (IsOpen)
             {
                 Kernel32.CloseHandle(hDevice);
                 hDevice = IntPtr.Zero;
-                IsOpen = false;
             }
         }
 
@@ -318,12 +312,6 @@ namespace OBC.Service
                 : IOControl(ctlCode, buffer, bufSize, null, 0, out bytesReturned);
         }
 
-        /// <inheritdoc cref="IOControl(uint, void*, uint, void*, uint, out uint)"/>
-        public unsafe bool IOControl(uint ctlCode, void* inBuffer, uint inBufSize, void* outBuffer, uint outBufSize)
-        {
-            return IOControl(ctlCode, inBuffer, inBufSize, outBuffer, outBufSize, out _);
-        }
-
         /// <summary>
         /// Sends a control code to the driver, causing the
         /// corresponding operation to be performed by the driver.
@@ -356,7 +344,7 @@ namespace OBC.Service
         /// </returns>
         public unsafe bool IOControl(uint ctlCode, void* inBuffer, uint inBufSize, void* outBuffer, uint outBufSize, out uint bytesReturned)
         {
-            if (hDevice == IntPtr.Zero)
+            if (!IsOpen)
             {
                 bytesReturned = 0;
                 return false;
@@ -382,28 +370,6 @@ namespace OBC.Service
             return IOControl(ctlCode, buffer.ToPointer(), bufSize, isOutBuffer);
         }
 
-        /// <inheritdoc cref="IOControl(uint, void*, uint, out uint, bool)"/>
-        public unsafe bool IOControl(uint ctlCode, IntPtr buffer, uint bufSize, out uint bytesReturned, bool isOutBuffer = false)
-        {
-            return IOControl(ctlCode, buffer.ToPointer(), bufSize, out bytesReturned, isOutBuffer);
-        }
-
-        /// <inheritdoc cref="IOControl(uint, void*, uint, void*, uint)"/>
-        public unsafe bool IOControl(uint ctlCode, IntPtr inBuffer, uint inBufSize, IntPtr outBuffer, uint outBufSize)
-        {
-            return IOControl(ctlCode, inBuffer.ToPointer(), inBufSize, outBuffer.ToPointer(), outBufSize, out _);
-        }
-
-        /// <inheritdoc cref="IOControl(uint, void*, uint, void*, uint, out uint)"/>
-        public unsafe bool IOControl(uint ctlCode, IntPtr inBuffer, uint inBufSize, IntPtr outBuffer, uint outBufSize, out uint bytesReturned)
-        {
-            return IOControl(ctlCode,
-                inBuffer.ToPointer(), inBufSize,
-                outBuffer.ToPointer(), outBufSize,
-                out bytesReturned);
-        }
-
-
         /// <param name="buffer">
         /// <para>
         /// The buffer that will be passed to the driver.
@@ -426,11 +392,6 @@ namespace OBC.Service
                 : IOControl(ctlCode, buffer, null, out bytesReturned);
         }
 
-        public bool IOControl(uint ctlCode, byte[] inBuffer, byte[] outBuffer)
-        {
-            return IOControl(ctlCode, inBuffer, outBuffer, out _);
-        }
-
         public unsafe bool IOControl(uint ctlCode, byte[] inBuffer, byte[] outBuffer, out uint bytesReturned)
         {
             fixed (byte* pInBuffer = inBuffer)
@@ -443,7 +404,6 @@ namespace OBC.Service
                     out bytesReturned);
             }
         }
-
 
         public bool IOControl<T>(uint ctlCode, ref T buffer, bool isOutBuffer = false)
             where T : unmanaged
@@ -468,70 +428,9 @@ namespace OBC.Service
             }
         }
 
-        public bool IOControl<T>(uint ctlCode, ref T inBuffer, out T outBuffer)
-            where T : unmanaged
-        {
-            return IOControl<T, T>(ctlCode, ref inBuffer, out outBuffer, out _);
-        }
-
-        public bool IOControl<T>(uint ctlCode, ref T inBuffer, out T outBuffer, out uint bytesReturned)
-            where T : unmanaged
-        {
-            return IOControl<T, T>(ctlCode, ref inBuffer, out outBuffer, out bytesReturned);
-        }
-
-        public bool IOControl<TIn, TOut>(uint ctlCode, ref TIn inBuffer, out TOut outBuffer)
-            where TIn : unmanaged
-            where TOut : unmanaged
-        {
-            return IOControl(ctlCode, ref inBuffer, out outBuffer, out _);
-        }
-
-        public unsafe bool IOControl<TIn, TOut>(uint ctlCode, ref TIn inBuffer, out TOut outBuffer, out uint bytesReturned)
-            where TIn : unmanaged
-            where TOut : unmanaged
-        {
-            int inSize = sizeof(TIn);
-
-            fixed (TIn* pInBuffer = &inBuffer)
-            fixed (TOut* pOutBuffer = &outBuffer)
-            {
-                return IOControl(ctlCode,
-                    pInBuffer, (uint)inSize,
-                    pOutBuffer, (uint)sizeof(TOut),
-                    out bytesReturned);
-            }
-        }
-
-
-        #region Cleanup code
         ~Driver()
         {
-            Dispose(false);
-        }
-
-        /// <summary>
-        /// Releases all resources associated with this <see cref="Driver"/>.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            // Don't do anything if we already called Dispose:
-            if (!IsOpen)
-            {
-                return;
-            }
-
-            // Close all open file and service handles
             Close();
-
-            IsOpen = false;
         }
-        #endregion
     }
 }

@@ -8,31 +8,31 @@ namespace OBC.Service.Logs
         /// <summary>
         /// Do not log anything.
         /// </summary>
-        None = 0,
+        NONE,
 
         /// <summary>
         /// Only log Fatal events.
         /// </summary>
-        Fatal = 1,
+        FATAL,
 
         /// <summary>
         /// Log Errors and Fatal events.
         /// </summary>
-        Error = 2,
+        ERROR,
 
         /// <summary>
         /// Log Warnings, Errors, and Fatal events.
         /// </summary>
-        Warn = 3,
+        WARN,
 
         /// <summary>
         /// Log all events, except for Debug events.
         /// </summary>
-        Info = 4,
+        INFO,
 
         /// <summary>
         /// Log all events.
         /// </summary>
-        Debug = 5,
+        DEBUG,
     }
 }
