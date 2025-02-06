@@ -1,7 +1,24 @@
+// This file is part of OpenBootCamp.
+// Copyright © Sparronator9999 2024-2025.
+//
+// OpenBootCamp is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option)
+// any later version.
+//
+// OpenBootCamp is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+// or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+// more details.
+//
+// You should have received a copy of the GNU General Public License along with
+// OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
+
 using System;
 using System.Runtime.InteropServices;
+using System.ServiceProcess;
 
-namespace OBC.Service.Win32
+namespace OBC.Common.Win32
 {
     /// <summary>
     /// Wraps native Win32 functions from <c>advapi32.dll</c>.
@@ -22,8 +39,8 @@ namespace OBC.Service.Win32
             string lpServiceName,
             string lpDisplayName,
             uint dwDesiredAccess,
-            uint dwServiceType,
-            uint dwStartType,
+            ServiceType dwServiceType,
+            ServiceStartMode dwStartType,
             uint dwErrorControl,
             string lpBinaryPathName,
             string lpLoadOrderGroup,

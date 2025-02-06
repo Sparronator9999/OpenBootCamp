@@ -117,39 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="errCDEject" xml:space="preserve">
-    <value>ERROR: failed to eject optical drive!</value>
+  <data name="drvNotFound" xml:space="preserve">
+    <value>{0} was not found.</value>
   </data>
-  <data name="errDirectRun" xml:space="preserve">
-    <value>This is a service;
-it is not intended to be run directly (by double-clicking).
-
-Please run this service from 'services.msc'.</value>
-  </data>
-  <data name="errEventHandle" xml:space="preserve">
-    <value>Failed to get event handle for event {0}.</value>
-  </data>
-  <data name="errEventInit" xml:space="preserve">
-    <value>DeviceIoControl failed for event {0}with error {1}:
-{2}</value>
-  </data>
-  <data name="errIoCtl" xml:space="preserve">
-    <value>DeviceIoControl failed with error {0}:
-{1}</value>
-  </data>
-  <data name="kbdBrightSet" xml:space="preserve">
-    <value>Setting keyboard backlight to {0}...</value>
-  </data>
-  <data name="svcException" xml:space="preserve">
-    <value>Unhandled exception occurred: {0}
-The service will now stop.</value>
-  </data>
-  <data name="svcVer" xml:space="preserve">
-    <value>~~~~~ OpenBootCamp Service ~~~~~
-Copyright © 2024 Sparronator9999
-OS version: {0}</value>
-  </data>
-  <data name="warnBadEvent" xml:space="preserve">
-    <value>Unhandled event (ID: {0}) was signalled.</value>
+  <data name="drvNullPath" xml:space="preserve">
+    <value>The driver path is set to a null or empty string.</value>
   </data>
 </root>

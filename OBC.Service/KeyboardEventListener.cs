@@ -1,3 +1,20 @@
+// This file is part of OpenBootCamp.
+// Copyright © Sparronator9999 2024-2025.
+//
+// OpenBootCamp is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option)
+// any later version.
+//
+// OpenBootCamp is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+// or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+// more details.
+//
+// You should have received a copy of the GNU General Public License along with
+// OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
+
+using OBC.Common;
 using OBC.Service.Logs;
 using System;
 using System.IO;
@@ -226,42 +243,44 @@ namespace OBC.Service
             DriveInfo[] drives = DriveInfo.GetDrives();
 
             // eject the first optical drive we find
-            string cdRom = string.Empty;
             foreach (DriveInfo drive in drives)
             {
-                if (drive.DriveType == DriveType.CDRom)
+                if (drive.DriveType != DriveType.CDRom)
                 {
-                    // remove trailing backslash from drive name
-                    // since it breaks the rest of the code if present :/
-                    cdRom = drive.Name.Remove(drive.Name.IndexOf('\\'));
-                    break;
-                }
-            }
-
-            if (cdRom == string.Empty)
-            {
-                return false;
-            }
-
-            using (Driver driver = new(cdRom))
-            {
-                if (!driver.Open())
-                {
-                    return false;
+                    continue;
                 }
 
-                for (int i = 0; i < 10; i++)
+                // remove trailing backslash from drive name
+                // since it breaks the rest of the code if present :/
+                using (Driver driver = new(drive.Name.Remove(drive.Name.IndexOf('\\'))))
                 {
-                    // attempt to lock access to drive. this will
-                    // fail if any other app is using the drive
-                    if (!driver.IOControl(0x00090018))  // FSCTL_LOCK_VOLUME
+                    if (!driver.Open())
                     {
-                        continue;
+                        return false;
                     }
-                    // dismount drive to prevent access from other apps
-                    if (!driver.IOControl(0x00090020))  // FSCTL_DISMOUNT_VOLUME
+
+                    for (int i = 0; i < 10; i++)
                     {
-                        continue;
+                        // attempt to lock access to drive. this will
+                        // fail if any other app is using the drive
+                        if (!driver.IOControl(0x00090018))  // FSCTL_LOCK_VOLUME
+                        {
+                            if (i >= 9)
+                            {
+                                return false;
+                            }
+                            continue;
+                        }
+                        // dismount drive to prevent access from other apps
+                        if (!driver.IOControl(0x00090020))  // FSCTL_DISMOUNT_VOLUME
+                        {
+                            if (i >= 9)
+                            {
+                                return false;
+                            }
+                            continue;
+                        }
+                        break;
                     }
 
                     // check if drive supports ejecting
@@ -274,8 +293,8 @@ namespace OBC.Service
                     // actually eject the drive
                     return driver.IOControl(0x002D4808);    //IOCTL_STORAGE_EJECT_MEDIA
                 }
-                return false;
             }
+            return false;
         }
 
         private static int GetBrightness()

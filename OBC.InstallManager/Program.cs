@@ -14,41 +14,22 @@
 // You should have received a copy of the GNU General Public License along with
 // OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
 
-namespace OBC.Service.Logs
+using System;
+using System.Windows.Forms;
+
+namespace OBC.InstallManager
 {
-    /// <summary>
-    /// The verbosity of logs
-    /// </summary>
-    public enum LogLevel
+    internal static class Program
     {
         /// <summary>
-        /// Do not log anything.
+        /// The main entry point for the application.
         /// </summary>
-        NONE,
-
-        /// <summary>
-        /// Only log Fatal events.
-        /// </summary>
-        FATAL,
-
-        /// <summary>
-        /// Log Errors and Fatal events.
-        /// </summary>
-        ERROR,
-
-        /// <summary>
-        /// Log Warnings, Errors, and Fatal events.
-        /// </summary>
-        WARN,
-
-        /// <summary>
-        /// Log all events, except for Debug events.
-        /// </summary>
-        INFO,
-
-        /// <summary>
-        /// Log all events.
-        /// </summary>
-        DEBUG,
+        [STAThread]
+        private static void Main()
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new MainForm());
+        }
     }
 }

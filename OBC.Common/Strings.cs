@@ -17,7 +17,7 @@
 using System.Globalization;
 using System.Resources;
 
-namespace OBC.Service
+namespace OBC.Common
 {
     /// <summary>
     /// A resource class for retrieving strings.

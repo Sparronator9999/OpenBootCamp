@@ -5,35 +5,24 @@
         <LangVersion>13.0</LangVersion>
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <AnalysisLevel>latest-recommended</AnalysisLevel>
-        <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+        <UseWindowsForms>true</UseWindowsForms>
+        <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
         <ApplicationIcon>obc.ico</ApplicationIcon>
-        <AssemblyName>obcsvc</AssemblyName>
-        <AssemblyTitle>OpenBootCamp Service</AssemblyTitle>
+        <AssemblyName>InstallMgr</AssemblyName>
+        <AssemblyTitle>OpenBootCamp driver/service install manager</AssemblyTitle>
         <Authors>Sparronator9999</Authors>
         <Copyright>Copyright © 2024-2025 Sparronator9999</Copyright>
         <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
         <PlatformTarget>AnyCPU</PlatformTarget>
-        <ApplicationManifest>app.manifest</ApplicationManifest>
         <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
         <VersionPrefix>0.6.9.420</VersionPrefix>
         <VersionSuffix>dev</VersionSuffix>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
     </PropertyGroup>
     <ItemGroup>
-        <Reference Include="System.Configuration.Install" />
-        <Reference Include="System.Management" />
-        <Reference Include="System.ServiceProcess" />
-        <Reference Include="System.Windows.Forms" />
-    </ItemGroup>
-    <ItemGroup>
-        <Compile Update="ProjectInstaller.cs">
-            <SubType>Component</SubType>
-        </Compile>
-        <Compile Update="OBCService.cs">
-            <SubType>Component</SubType>
-        </Compile>
-    </ItemGroup>
-    <ItemGroup>
       <ProjectReference Include="..\OBC.Common\OBC.Common.csproj" />
-      <ProjectReference Include="..\OBC.Config\OBC.Config.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <Reference Include="System.ServiceProcess" />
     </ItemGroup>
 </Project>

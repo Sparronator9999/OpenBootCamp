@@ -1,6 +1,23 @@
+// This file is part of OpenBootCamp.
+// Copyright © Sparronator9999 2024-2025.
+//
+// OpenBootCamp is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option)
+// any later version.
+//
+// OpenBootCamp is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+// or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+// more details.
+//
+// You should have received a copy of the GNU General Public License along with
+// OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
+
 using Microsoft.Win32;
-using OBC.Service.Logs;
+using OBC.Common;
 using OBC.Config;
+using OBC.Service.Logs;
 using System.ComponentModel;
 using System.ServiceProcess;
 using System.IO;
@@ -38,7 +55,7 @@ namespace OBC.Service
             LoadConf();
 
             Log.Info("Initialising drivers...");
-            if (OpenDriver(KeyMagic, "Keymagic"))
+            if (KeyMagic.Open())
             {
                 Log.Info("Setting OSXFnBehavior from registry key...");
 
@@ -63,12 +80,32 @@ namespace OBC.Service
                     LogIoControlError(KeyMagic);
                 }
             }
+            else
+            {
+                Log.Error("Failed to connect to Keymagic.sys!\n" +
+                    "Most (if not all) of OBC's functionality will not work!");
+            }
 
-            if (OpenDriver(KeyAgent, "KeyAgent") && OpenDriver(HAL, "MacHALDriver"))
+            if (HAL.Open())
             {
                 KeyLight = new(HAL, Config.KeyboardBrightness, Config.KeyboardBrightnessStep);
+            }
+            else
+            {
+                Log.Warn("Failed to connect to MacHALDriver.sys!\n" +
+                    "Keyboard backlight adjustments will be unavailable!");
+            }
+
+            if (KeyAgent.Open())
+            {
                 Listener = new(KeyAgent, Log, KeyLight);
                 Listener.Start();
+            }
+            else
+            {
+                Log.Warn(
+                    "Failed to connect to KeyAgent.sys!\n" +
+                    "Some special Fn keys will not work!");
             }
             Log.Info("Started the OpenBootCamp service.");
         }
@@ -115,17 +152,6 @@ namespace OBC.Service
                 case PowerBroadcastStatus.ResumeAutomatic:
                     KeyLight?.SetBacklightEnabled(true);
                     break;
-            }
-            return true;
-        }
-
-        private bool OpenDriver(Driver driver, string driverName)
-        {
-            Log.Info($"Attempting to connect to {driverName}.sys...");
-            if (!driver.Open())
-            {
-                Log.Error($"Failed to connect to {driverName}.sys!");
-                return false;
             }
             return true;
         }

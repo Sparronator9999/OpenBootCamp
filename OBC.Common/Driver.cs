@@ -1,12 +1,30 @@
-using OBC.Service.Win32;
+// This file is part of OpenBootCamp.
+// Copyright © Sparronator9999 2024-2025.
+//
+// OpenBootCamp is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option)
+// any later version.
+//
+// OpenBootCamp is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+// or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+// more details.
+//
+// You should have received a copy of the GNU General Public License along with
+// OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
+
+using OBC.Common.Win32;
 using System;
 using System.IO;
+using System.Messaging;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
+using System.ServiceProcess;
 
 [assembly: DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
 
-namespace OBC.Service
+namespace OBC.Common
 {
     /// <summary>
     /// Contains functions to install and manage kernel-level device drivers.
@@ -79,7 +97,7 @@ namespace OBC.Service
         /// <c>true</c> if the driver was installed
         /// successfully, otherwise <c>false</c>.
         /// </returns>
-        public bool Install()
+        public bool Install(ServiceStartMode startMode = ServiceStartMode.Manual)
         {
             ErrorCode = 0;
 
@@ -109,8 +127,8 @@ namespace OBC.Service
 
             // Try to create the service:
             IntPtr hSvc = AdvApi32.CreateServiceW(
-                hSCM, DeviceName, DeviceName, 0xF01FF, 1, 3, 1,
-                DriverPath, null, null, null, null, null);
+                hSCM, DeviceName, DeviceName, 0xF01FF, ServiceType.KernelDriver,
+                startMode, 1, DriverPath, null, null, null, null, null);
 
             if (hSvc == IntPtr.Zero)
             {
@@ -239,7 +257,7 @@ namespace OBC.Service
             {
                 hDevice = Kernel32.CreateFileW(
                     $"\\\\.\\{DeviceName}",
-                    0xC0000000,
+                    GenericAccessRights.Read | GenericAccessRights.Write,
                     FileShare.ReadWrite,
                     IntPtr.Zero,
                     FileMode.Open,
