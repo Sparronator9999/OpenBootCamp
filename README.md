@@ -28,12 +28,10 @@ Additionally, the following bugs from the official Boot Camp Manager are fixed:
 
 ## Planned features
 
-- Install instructions
-- Volume control on older Windows versions (7 and earlier?)
+Roughly in priority order:
+
 - An overlay when adjusting keyboard backlight, screen brightness, and volume
   (when not already handled by Windows)
-- Ability to install Apple drivers (`KeyAgent.sys`, `MacHALDriver.sys`, etc.)
-  automatically rather than having to install Boot Camp Services to get them
 - A config application. Learn to edit XML for now.
 - A few power saving features:
   - Turn off keyboard backlight when closing laptop lid (something which I
@@ -41,6 +39,7 @@ Additionally, the following bugs from the official Boot Camp Manager are fixed:
   - Set keyboard backlight state based on power source or battery charge (e.g.
     low battery, switching between AC and battery power)
   - Turn off keyboard backlight when keyboard is inactive
+- Volume control on older Windows versions (7 and earlier?)
 - Smooth keyboard backlight animations
 - More that I haven't thought of yet
 
@@ -73,7 +72,8 @@ Please [compile the program yourself](#compile) in the meantime.
 
 <!--Development builds are available through [GitHub Actions](https://github.com/Sparronator9999/OpenBootCamp/actions).
 
-Alternatively, if you don't have a GitHub account, you can download the latest build from [nightly.link](https://nightly.link/Sparronator9999/OpenBootCamp/workflows/build/main?preview).
+Alternatively, if you don't have a GitHub account, you can download the latest
+build from [nightly.link](https://nightly.link/Sparronator9999/OpenBootCamp/workflows/build/main?preview).
 
 (You probably want the `Release` build, unless you're debugging issues with the program)
 
@@ -125,34 +125,49 @@ Because I was/am unhappy with the Apple-provided Boot Camp services.
 
 Also, reverse-engineering is fun :D (if you know what you're doing, that is)
 
+### How do I install this?
+
+1. Obtain a copy of `KeyAgent.sys` and `MacHALDriver.sys` for your laptop (see
+   [below](#how-do-i-obtain-keyagentsys-and-machaldriversys)).
+2. Create a folder in the same location as `InstallMgr.exe` called `BootCamp`
+   (if it doesn't exist), and move both files there.
+3. Run `InstallMgr.exe`, and install both `KeyAgent.sys` and `MacHALDriver.sys`,
+   then reboot.
+4. Run `InstallMgr.exe` again, then install and run `OpenBootCamp service`.
+5. ???
+6. Profit!
+
+NOTE: if you try to uninstall `MacHALDriver.sys` in the future, it might still
+show as "Installed" until you reboot. This will be fixed in a future commit.
+
 ### How do I obtain `KeyAgent.sys` and `MacHALDriver.sys`?
 
-**NOTE: OpenBootCamp does not currently install `KeyAgent` and `MacHALDriver` for you.**
-**You must install Boot Camp Services in order to use OpenBootCamp for now.**
-
-Download the Boot Camp support software for your Mac using Boot Camp Assistant
-(or [Brigadier](https://github.com/timsutton/brigadier) if you're already on Windows),
-then navigate to `Drivers\Apple\BootCamp.msi` in 7-Zip. There should be a few .sys files,
-but the only ones we care about are `KeyAgent.sys` and `MacHALDriver.sys`. Copy these
-to the `Drivers` folder where OpenBootCamp is located.
+1. Download the Boot Camp support software for your Mac using Boot Camp
+   Assistant (or [Brigadier](https://github.com/timsutton/brigadier) if you're
+   already on Windows).
+2. Navigate to and open `Drivers\Apple\BootCamp.msi` in 7-Zip.
+3. Copy `KeyAgent.sys` and `MacHALDriver.sys` to a folder named `BootCamp` in
+   the same folder as `InstallMgr.exe`, then follow the [instructions](#how-do-i-install-this)
+   to install them with OpenBootCamp.
 
 While you're at it, install the Apple Keyboard drivers if you haven't already
-(the installer's called `AppleKeyboardInstaller64.exe`, and is in the same folder as `BootCamp.msi`).
-
-OpenBootCamp will install the drivers if no other `KeyAgent.sys` or `MacHALDriver.sys`
-is installed **(coming soon)**.
+(the installer's called `AppleKeyboardInstaller64.exe`, and is in the same
+folder as `BootCamp.msi`).
 
 ### My Boot Camp support software has `KeyManager.sys`, but not `KeyAgent.sys`?
 
-If you couldn't find `KeyAgent.sys`, but found `KeyManager.sys`, your laptop is currently
-too new for OpenBootCamp. Come back when someone adds support for these laptops.
+If you couldn't find `KeyAgent.sys`, but found `KeyManager.sys`, your laptop is
+currently too new for OpenBootCamp. Come back when someone adds support for
+these laptops.
 
-I won't be able to do this, as I don't have access to a Mac with this configuration.
+I won't be able to do this, as I don't have access to a Mac with this
+configuration.
 
 ### I want \<feature X\> in OpenBootCamp!
 
 Ask nicely in the [issues](https://github.com/Sparronator9999/Sparronator9999/issues),
-and I might add your feature if I know how, have time, and I think it'll benefit the project.
+and I might add your feature if I know how, have time, and I think it'll
+benefit the project.
 
 Alternatively, create a [pull request](https://github.com/Sparronator9999/Sparronator9999/pulls)
 and add the feature yourself.
@@ -163,14 +178,12 @@ No.
 
 ### Linux?
 
-🤦
-
-Linux *already has support* for Apple hardware natively (at least on the laptops I tested it on),
-so a Linux port would be pointless.
+Linux already has native support for Apple hardware (at least on the laptops
+I tested it on), so a Linux port would be pointless.
 
 ## License and Copyright
 
-Copyright © 2024 Sparronator9999.
+Copyright © 2024-2025 Sparronator9999.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
