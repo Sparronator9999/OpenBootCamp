@@ -140,9 +140,17 @@ Please run this service from 'services.msc'.</value>
   <data name="kbdBrightSet" xml:space="preserve">
     <value>Setting keyboard backlight to {0}...</value>
   </data>
+  <data name="svcDesc" xml:space="preserve">
+    <value>This service provides core functionality of OpenBootCamp (OBC), including handling of Apple keyboard special Function (Fn) keys. If this service's Startup Type is set to Manual or Disabled, most of OBC's apps and features will not work.
+
+For more information on OBC, visit https://github.com/Sparronator9999/OpenBootCamp.</value>
+  </data>
   <data name="svcException" xml:space="preserve">
     <value>Unhandled exception occurred: {0}
 The service will now stop.</value>
+  </data>
+  <data name="svcKELException" xml:space="preserve">
+    <value>Unhandled exception occurred in Keyboard Event Listener: {0}</value>
   </data>
   <data name="svcVer" xml:space="preserve">
     <value>~~~~~ OpenBootCamp Service ~~~~~

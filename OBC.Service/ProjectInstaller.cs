@@ -27,7 +27,8 @@ namespace OBC.Service
         {
             ServiceInstaller installer = new()
             {
-                DisplayName = "OpenBootCamp Service",
+                Description = Strings.GetString("svcDesc"),
+                DisplayName = "OpenBootCamp service",
                 ServiceName = "obcsvc",
                 StartType = ServiceStartMode.Automatic,
             };

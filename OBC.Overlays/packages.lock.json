@@ -89,9 +89,6 @@
       "obc.common": {
         "type": "Project"
       },
-      "obc.config": {
-        "type": "Project"
-      },
       "obc.ipc": {
         "type": "Project",
         "dependencies": {

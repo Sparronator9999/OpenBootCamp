@@ -3,7 +3,8 @@
   "dependencies": {
     ".NETFramework,Version=v4.8": {
       "MessagePack": {
-        "type": "Transitive",
+        "type": "Direct",
+        "requested": "[3.1.2, )",
         "resolved": "3.1.2",
         "contentHash": "Aw5J6OxDnY8XDDEwtvygHKouhnDS3ltzB/2JGZyamN33y8KesxfdOhdJDxgIEbsD+fmKA4wI5i1qVRPQlmAXeg==",
         "dependencies": {
@@ -85,19 +86,11 @@
         "dependencies": {
           "System.Runtime.CompilerServices.Unsafe": "4.5.3"
         }
-      },
-      "obc.common": {
-        "type": "Project"
-      },
-      "obc.config": {
-        "type": "Project"
-      },
-      "obc.ipc": {
-        "type": "Project",
-        "dependencies": {
-          "MessagePack": "[3.1.2, )"
-        }
       }
-    }
+    },
+    ".NETFramework,Version=v4.8/win-x64": {},
+    ".NETFramework,Version=v4.8/win-x86": {},
+    ".NETFramework,Version=v4.8/win7-x64": {},
+    ".NETFramework,Version=v4.8/win7-x86": {}
   }
 }

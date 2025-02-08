@@ -15,10 +15,13 @@
 // OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
 
 using OBC.Common;
+using OBC.IPC;
 using OBC.Service.Logs;
 using System;
 using System.IO;
+using System.IO.Pipes;
 using System.Management;
+using System.Security.AccessControl;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -79,12 +82,21 @@ namespace OBC.Service
 
         private readonly Logger Log;
 
+        private readonly NamedPipeServer<ObcEvent> IPCServer;
+
         public KeyboardEventListener(AppleKeyboardDriver keyAgent, Logger logger, KeyboardBacklight keylight)
         {
             KeyAgent = keyAgent;
-            //HAL = hal;
             Log = logger;
             KeyLight = keylight;
+
+            // allow anyone to connect to the named pipe server
+            // hopefully the IPC server is exploit-free...
+            PipeSecurity security = new();
+            security.AddAccessRule(new PipeAccessRule(
+                "Users", PipeAccessRights.ReadWrite, AccessControlType.Allow));
+
+            IPCServer = new("ObcEvents", security);
         }
 
         public void Start()
@@ -119,6 +131,9 @@ namespace OBC.Service
                 }
             }
 
+            Log.Debug("Starting event IPC server...");
+            IPCServer.Start();
+
             ListenerTask = new Task(HandleEvents, CancellationToken.None, TaskCreationOptions.LongRunning);
             ListenerTask.Start();
         }
@@ -151,6 +166,7 @@ namespace OBC.Service
                 switch (eventID)
                 {
                     case 0:     // eject optical drive
+                        IPCServer?.PushMessage(new ObcEvent(ObcEventType.Eject));
                         if (!EjectOpticalDrive())
                         {
                             WorkerLog(Strings.GetString("errCDEject"));
@@ -165,7 +181,10 @@ namespace OBC.Service
                         {
                             DispBright++;
                         }
-                        SetBrightness((int)(DispBright / 15f * 100));
+                        int brightnessPercent = (int)(DispBright / 15f * 100);
+                        IPCServer?.PushMessage(new ObcEvent(
+                            ObcEventType.DispBright, brightnessPercent));
+                        SetBrightness(brightnessPercent);
                         break;
                     case 4:     // display brightness down
                         if (DispBright - 1 < 0)
@@ -176,13 +195,26 @@ namespace OBC.Service
                         {
                             DispBright--;
                         }
-                        SetBrightness((int)(DispBright / 15f * 100));
+                        brightnessPercent = (int)(DispBright / 15f * 100);
+                        IPCServer?.PushMessage(new ObcEvent(
+                            ObcEventType.DispBright, brightnessPercent));
+                        SetBrightness(brightnessPercent);
                         break;
                     case 7:    // keyboard light up
-                        KeyLight?.BrightnessUp();
+                        if (KeyLight is not null)
+                        {
+                            KeyLight.BrightnessUp();
+                            IPCServer?.PushMessage(new ObcEvent(
+                            ObcEventType.KeyLightBright, KeyLight.Brightness * 100 / 255));
+                        }
                         break;
                     case 8:    // keyboard light down
-                        KeyLight?.BrightnessDown();
+                        if (KeyLight is not null)
+                        {
+                            KeyLight.BrightnessDown();
+                            IPCServer?.PushMessage(new ObcEvent(
+                            ObcEventType.KeyLightBright, KeyLight.Brightness * 100 / 255));
+                        }
                         break;
                     case 19:    // keyboard presence detected
                         break;
@@ -238,6 +270,9 @@ namespace OBC.Service
             Log.Debug($"[Event Listener] {message}");
         }
 
+        // TODO: run async since it hangs the entire event listener
+        // thread while waiting for the optical drive to eject
+        // (which can take quite a while in certain circumstances...)
         private static bool EjectOpticalDrive()
         {
             DriveInfo[] drives = DriveInfo.GetDrives();

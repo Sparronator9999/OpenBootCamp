@@ -14,10 +14,11 @@
 // You should have received a copy of the GNU General Public License along with
 // OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
 
-using Microsoft.Win32;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Windows.Forms;
@@ -52,29 +53,6 @@ public static class Utils
     }
 
     /// <summary>
-    /// Shows a warning dialog.
-    /// </summary>
-    /// <param name="message">
-    /// The message to show in the warning dialog.
-    /// </param>
-    /// <param name="title">
-    /// The text to show in the title bar of the dialog.
-    /// </param>
-    /// <param name="button">
-    /// One of the <see cref="MessageBoxDefaultButton"/> values
-    /// that specifies the default button for the dialog.
-    /// </param>
-    /// <returns>
-    /// One of the <see cref="DialogResult"/> values.
-    /// </returns>
-    public static DialogResult ShowWarning(string message, string title,
-        MessageBoxDefaultButton button = MessageBoxDefaultButton.Button1)
-    {
-        return MessageBox.Show(message, title, MessageBoxButtons.YesNo,
-            MessageBoxIcon.Warning, button);
-    }
-
-    /// <summary>
     /// Shows an error dialog.
     /// </summary>
     /// <param name="message">
@@ -87,6 +65,11 @@ public static class Utils
     {
         return MessageBox.Show(message, "Error",
             MessageBoxButtons.OK, MessageBoxIcon.Stop);
+    }
+
+    public static Icon GetEntryAssemblyIcon()
+    {
+        return Icon.ExtractAssociatedIcon(Assembly.GetEntryAssembly().Location);
     }
 
     /// <summary>
@@ -252,37 +235,5 @@ public static class Utils
             }
         }
         return 0;
-    }
-
-    /// <summary>
-    /// Gets the computer model name from registry.
-    /// </summary>
-    /// <returns>
-    /// The computer model if the function succeeds,
-    /// otherwise <see cref="string.Empty"/>.
-    /// </returns>
-    public static string GetPCModel()
-    {
-        return GetBIOSRegValue("SystemProductName");
-    }
-
-    /// <summary>
-    /// Gets the computer manufacturer from registry.
-    /// </summary>
-    /// <returns>
-    /// The computer manufacturer if the function succeeds,
-    /// otherwise <see cref="string.Empty"/>.
-    /// </returns>
-    public static string GetPCManufacturer()
-    {
-        return GetBIOSRegValue("SystemManufacturer");
-    }
-
-    private static string GetBIOSRegValue(string name)
-    {
-        using (RegistryKey biosKey = Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\BIOS"))
-        {
-            return ((string)biosKey?.GetValue(name, string.Empty)).Trim();
-        }
     }
 }

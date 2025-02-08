@@ -32,7 +32,7 @@ namespace OBC.InstallManager
         public MainForm()
         {
             InitializeComponent();
-            Icon = Icon.ExtractAssociatedIcon(Assembly.GetEntryAssembly().Location);
+            Icon = Utils.GetEntryAssemblyIcon();
 
             SetStatusLabel("obcsvc", false, lblOBCSState, btnOBCSInstall, btnOBCSStart);
             SetStatusLabel("KeyAgent", true, lblKAState, btnKAInstall);
