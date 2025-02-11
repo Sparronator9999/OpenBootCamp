@@ -32,16 +32,13 @@ Roughly in priority order:
 
 - A config application. Learn to edit XML for now.
 - A few power saving features:
-  - Turn off keyboard backlight when closing laptop lid (something which I
-    would've thought would be done in hardware/drivers, but here we are)
   - Set keyboard backlight state based on power source or battery charge (e.g.
     low battery, switching between AC and battery power)
-  - Turn off keyboard backlight when keyboard is inactive
 - Fan control + sensor monitoring?
   - Hopefully this will be doable without adversely affecting battery life
     (unlike MacsFanControl, which seems to install a driver that stays running
-    even after quitting the program that saps battery life and doesn't
-    uninstall until a reboot)
+    even after quitting the program that saps battery life (even when doing
+    nothing) and doesn't uninstall until a reboot)
   - Possible thanks to [SMCKit](https://github.com/beltex/SMCKit) existing
     (yes, I know it's for macOS, but having a look at the source was what
     allowed me to figure out what some of the `MacHALDriver.sys` IOCTLs were
