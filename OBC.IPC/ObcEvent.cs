@@ -15,37 +15,42 @@ public enum ObcEventType
     /// Sent when OBC handles a brightness key press.
     /// </summary>
     /// <remarks>
-    /// This event's <see cref="ObcEvent.Value"/> field includes
-    /// the following data as an <see langword="int"/>:<br/>
-    /// • Brightness: The new display brightness, as a percentage (0-100%).
+    /// This event's <see cref="ObcEvent.Value"/> field will be set
+    /// to the new display brightness, as a percentage (0-100%).
     /// </remarks>
     DispBright,
     /// <summary>
     /// Sent when OBC handles a keyboard backlight key press.
     /// </summary>
     /// <remarks>
-    /// This event's <see cref="ObcEvent.Value"/> field includes
-    /// the following data as an <see langword="int"/>:<br/>
-    /// • Backlight brightness: The new keyboard backlight brightness, as a percentage (0-100%).
+    /// This event's <see cref="ObcEvent.Value"/> field will be set to
+    /// the new keyboard backlight brightness, as a percentage (0-100%).
     /// </remarks>
     KeyLightBright,
     /// <summary>
     /// Sent when OBC handles a volume key press.
     /// </summary>
     /// <remarks>
-    /// This event's <see cref="ObcEvent.Value"/> field includes
-    /// the following data as an <see langword="int"/>:<br/>
-    /// • Volume: The new system volume, as a percentage (0-100%).
+    /// This event's <see cref="ObcEvent.Value"/> field will be
+    /// set to the new system volume, as a percentage (0-100%).
     /// </remarks>
     Volume,
     /// <summary>
     /// Sent when OBC handles an eject key press.
     /// </summary>
     /// <remarks>
-    /// This event does not include any data
-    /// (<see cref="ObcEvent.Value"/> will be <see langword="null"/>).
+    /// This event does not include any data, and the
+    /// <see cref="ObcEvent.Value"/> field will be set to -1.
     /// </remarks>
     Eject,
+    /// <summary>
+    /// Sent when OBC detects the laptop lid is opened/closed.
+    /// </summary>
+    /// <remarks>
+    /// This event's <see cref="ObcEvent.Value"/> field will be set to
+    /// a value indicating whether the lid is open (1) or closed (0).
+    /// </remarks>
+    LidSwitchChange,
 }
 
 /// <summary>

@@ -21,6 +21,10 @@ namespace OBC.Overlays.Win32
 {
     internal static class User32
     {
+        private static IntPtr hNotify;
+
+        public static Guid LidSwitchGuid = new("BA3E0F4D-B817-4094-A2D1-D56379E6A0F3");
+
         internal static bool SetBlur(IntPtr hWnd, bool enable)
         {
             // TODO: support windows versions other than 10 (and probably 11)
@@ -51,6 +55,29 @@ namespace OBC.Overlays.Win32
             }
         }
 
+        internal static bool RegisterLidEvents(IntPtr hWnd)
+        {
+            if (hNotify == IntPtr.Zero)
+            {
+                hNotify = RegisterPowerSettingNotification(hWnd, ref LidSwitchGuid, 0);
+                return hNotify != IntPtr.Zero;
+            }
+            return false;
+        }
+
+        internal static bool UnregisterLidEvents()
+        {
+            if (hNotify != IntPtr.Zero)
+            {
+                if (!UnregisterPowerSettingNotification(hNotify))
+                {
+                    return false;
+                }
+                hNotify = IntPtr.Zero;
+            }
+            return true;
+        }
+
         [StructLayout(LayoutKind.Sequential)]
         private struct WindowCompositionAttributeData
         {
@@ -72,5 +99,23 @@ namespace OBC.Overlays.Win32
         private static extern int SetWindowCompositionAttribute(
             IntPtr hWnd,
             ref WindowCompositionAttributeData data);
+
+        [DllImport("User32", ExactSpelling = true, SetLastError = true)]
+        private static extern IntPtr RegisterPowerSettingNotification(
+            IntPtr hRecipient,
+            ref Guid PowerSettingGuid,
+            uint Flags);
+
+        [DllImport("User32", ExactSpelling = true, SetLastError = true)]
+        private static extern bool UnregisterPowerSettingNotification(
+            IntPtr Handle);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct PowerBroadcastSetting
+    {
+        public Guid PowerSetting;
+        public int DataLength;
+        public int Data;
     }
 }

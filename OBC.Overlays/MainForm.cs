@@ -21,6 +21,7 @@ using OBC.Overlays.Win32;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace OBC.Overlays
@@ -79,14 +80,31 @@ namespace OBC.Overlays
 
         protected override void WndProc(ref Message m)
         {
-            if (m.Msg == 0x1A)  // WM_SETTINGCHANGE
+            switch (m.Msg)
             {
-                bool blurEnable = GetBlurEnabled();
-                if (blurEnable != BlurEnabled)
-                {
-                    BlurEnabled = blurEnable;
-                    SetTheme();
-                }
+                case 0x1A:  // WM_SETTINGCHANGE
+                    bool blurEnable = GetBlurEnabled();
+                    if (blurEnable != BlurEnabled)
+                    {
+                        BlurEnabled = blurEnable;
+                        SetTheme();
+                    }
+                    break;
+                case 0x218: // WM_POWERBROADCAST
+                    if (m.WParam.ToInt32() == 0x8013)   // PBT_POWERSETTINGCHANGE
+                    {
+                        IntPtr pbsPtr = m.LParam;
+                        PowerBroadcastSetting pbsStruct = Marshal.PtrToStructure<PowerBroadcastSetting>(pbsPtr);
+
+                        if (pbsStruct.PowerSetting != User32.LidSwitchGuid)
+                        {
+                            break;
+                        }
+
+                        IPCClient?.PushMessage(new ObcEvent(
+                            ObcEventType.LidSwitchChange, pbsStruct.Data));
+                    }
+                    break;
             }
             base.WndProc(ref m);
         }
@@ -106,7 +124,14 @@ namespace OBC.Overlays
         {
             BlurEnabled = GetBlurEnabled();
             SetTheme();
+            User32.RegisterLidEvents(Handle);
             base.OnHandleCreated(e);
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            User32.UnregisterLidEvents();
+            base.OnFormClosing(e);
         }
 
         private void SetTheme()

@@ -165,16 +165,14 @@ namespace OBC.Service
 
         protected override bool OnPowerEvent(PowerBroadcastStatus powerStatus)
         {
-            switch (powerStatus)
+            if (KeyLight is not null)
             {
-                case PowerBroadcastStatus.ResumeCritical:
-                case PowerBroadcastStatus.ResumeSuspend:
-                case PowerBroadcastStatus.ResumeAutomatic:
-                    if (KeyLight is not null)
-                    {
-                        KeyLight.Enabled = true;
-                    }
-                    break;
+                switch (powerStatus)
+                {
+                    case PowerBroadcastStatus.Suspend:
+                        KeyLight.Enabled = false;
+                        break;
+                }
             }
             return true;
         }

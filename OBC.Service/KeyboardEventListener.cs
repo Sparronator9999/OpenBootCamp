@@ -25,6 +25,7 @@ using System.Management;
 using System.Security.AccessControl;
 using System.Threading;
 using System.Threading.Tasks;
+using Timer = System.Timers.Timer;
 
 namespace OBC.Service
 {
@@ -85,6 +86,12 @@ namespace OBC.Service
 
         private readonly NamedPipeServer<ObcEvent> IPCServer;
 
+        private readonly Timer IdleTimer = new()
+        {
+            Interval = 10000,
+            AutoReset = false,
+        };
+
         public KeyboardEventListener(AppleKeyboardDriver keyAgent, Logger logger, KeyboardBacklight keylight)
         {
             KeyAgent = keyAgent;
@@ -98,6 +105,9 @@ namespace OBC.Service
                 "Users", PipeAccessRights.ReadWrite, AccessControlType.Allow));
 
             IPCServer = new("ObcEvents", security);
+            IPCServer.ClientMessage += IPCServer_ClientMessage;
+
+            IdleTimer.Elapsed += IdleTimer_Elapsed;
         }
 
         public void Start()
@@ -154,6 +164,22 @@ namespace OBC.Service
 
             // perform cleanup (disposal of events, etc.)
             Cleanup();
+        }
+
+        private void IPCServer_ClientMessage(object sender, PipeMessageEventArgs<ObcEvent, ObcEvent> e)
+        {
+            if (e.Message.Event == ObcEventType.LidSwitchChange && KeyLight is not null)
+            {
+                KeyLight.Enabled = e.Message.Value == 1;
+            }
+        }
+
+        private void IdleTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            if (KeyLight is not null)
+            {
+                KeyLight.Enabled = false;
+            }
         }
 
         private void HandleEvents()
@@ -232,6 +258,12 @@ namespace OBC.Service
                         }
                         break;
                     case 19:    // keyboard presence detected
+                        if (KeyLight is not null)
+                        {
+                            IdleTimer.Stop();
+                            KeyLight.Enabled = true;
+                            IdleTimer.Start();
+                        }
                         break;
                     case EVENT_COUNT:   // shut down listener - signalled by Stop()
                         WorkerLog("Stopping event listener...");
