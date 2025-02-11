@@ -28,11 +28,13 @@ namespace OBC.Overlays
     public partial class MainForm : Form
     {
         private ObcEventType OverlayMode = ObcEventType.None;
-        private int Value;
+        private int Value = -1;
         private bool ShowTextVal;
+        private bool BlurEnabled;
+        private readonly float DpiScale;
 
-        private readonly SolidBrush fgBrush = new(Color.FromArgb(176, 16, 16, 16));
-        private readonly Pen fgPen = new(Color.FromArgb(176, 16, 16, 16), 6);
+        private SolidBrush fgBrush;
+        private Pen fgPen;
         private readonly StringFormat ValFmt = new()
         {
             Alignment = StringAlignment.Center,
@@ -41,9 +43,6 @@ namespace OBC.Overlays
         private readonly NamedPipeClient<ObcEvent> IPCClient = new("ObcEvents");
 
         private readonly Timer FadeTimer = new();
-
-        // whether the overlay has a blurred background
-        private bool BlurEnabled;
 
         protected override CreateParams CreateParams
         {
@@ -59,8 +58,6 @@ namespace OBC.Overlays
         public MainForm()
         {
             ClientSize = new Size(192, 192);
-            AutoScaleDimensions = new SizeF(96F, 96F);
-            AutoScaleMode = AutoScaleMode.Dpi;
             DoubleBuffered = true;
             Font = new Font("Segoe UI", 10, GraphicsUnit.Point);
             FormBorderStyle = FormBorderStyle.None;
@@ -68,6 +65,10 @@ namespace OBC.Overlays
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterScreen;
             TopMost = true;
+
+            AutoScaleDimensions = new SizeF(96F, 96F);
+            AutoScaleMode = AutoScaleMode.Dpi;
+            DpiScale = AutoScaleDimensions.Width / 96F;
 
             FadeTimer.Tick += FadeTimerTick;
 
@@ -84,10 +85,7 @@ namespace OBC.Overlays
                 if (blurEnable != BlurEnabled)
                 {
                     BlurEnabled = blurEnable;
-                    BackColor = blurEnable
-                        ? Color.FromArgb(112, 112, 112)
-                        : Color.FromArgb(176, 176, 176);
-                    User32.SetBlur(Handle, blurEnable);
+                    SetTheme();
                 }
             }
             base.WndProc(ref m);
@@ -107,29 +105,43 @@ namespace OBC.Overlays
         protected override void OnHandleCreated(EventArgs e)
         {
             BlurEnabled = GetBlurEnabled();
+            SetTheme();
+            base.OnHandleCreated(e);
+        }
+
+        private void SetTheme()
+        {
             BackColor = BlurEnabled
                 ? Color.FromArgb(112, 112, 112)
                 : Color.FromArgb(176, 176, 176);
+            Color fgColor = BlurEnabled
+                ? Color.FromArgb(176, 0, 0, 0)
+                : Color.FromArgb(32, 32, 32);
+
+            fgPen?.Dispose();
+            fgBrush?.Dispose();
+            fgPen = new Pen(fgColor, 6);
+            fgBrush = new SolidBrush(fgColor);
+
             User32.SetBlur(Handle, BlurEnabled);
-            base.OnHandleCreated(e);
         }
 
         private void FadeTimerTick(object sender, EventArgs e)
         {
-            if (FadeTimer.Interval == 2000)
+            if (FadeTimer.Interval > 50)
             {
                 FadeTimer.Stop();
                 FadeTimer.Interval = 50;
                 FadeTimer.Start();
             }
-            else if (Opacity > 0)
-            {
-                Opacity -= 0.1;
-            }
             else
             {
-                FadeTimer.Stop();
-                Hide();
+                Opacity -= 0.1;
+                if (Opacity <= 0)
+                {
+                    FadeTimer.Stop();
+                    Hide();
+                }
             }
         }
 
@@ -167,8 +179,6 @@ namespace OBC.Overlays
         {
             Graphics g = e.Graphics;
             g.PixelOffsetMode = PixelOffsetMode.Half;
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            float scale = CurrentAutoScaleDimensions.Width / 96f;
 
             switch (OverlayMode)
             {
@@ -201,130 +211,117 @@ namespace OBC.Overlays
             }
 
             // render the "progress bar"
+            g.SmoothingMode = SmoothingMode.None;
             if (Value > -1)
             {
-                int value = (int)(Value * scale * 128 / 100);
+                int value = (int)(Value * DpiScale * 128 / 100);
 
-                int x = (int)(32 * scale);
-                int y = (int)(160 * scale);
-                int h = (int)(4 * scale);
+                int x = (int)(32 * DpiScale);
+                int y = (int)(160 * DpiScale);
+                int h = (int)(4 * DpiScale);
 
-                g.FillRectangle(fgBrush, x - 1, y - 1, (int)(130 * scale), h + 2);
+                g.FillRectangle(fgBrush, x - 1, y - 1, (int)(130 * DpiScale), h + 2);
                 g.FillRectangle(Brushes.White, x, y, value, h);
 
                 if (ShowTextVal)
                 {
-                    g.DrawString($"{Value}%", Font, fgBrush, 96 * scale, 166 * scale, ValFmt);
+                    g.SmoothingMode = SmoothingMode.AntiAlias;
+                    g.DrawString($"{Value}%", Font, fgBrush, 96 * DpiScale, 166 * DpiScale, ValFmt);
                 }
             }
         }
 
         private void DrawEject(Graphics g)
         {
-            float scale = CurrentAutoScaleDimensions.Width / 96f;
-            g.FillPath(fgBrush, Triangle(64, 64, 64, 40, scale));
-            g.FillRectangle(fgBrush, 64, 112, 64, 8, scale);
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.FillPolygon(fgBrush, Triangle(64, 64, 64, 40));
+            g.SmoothingMode = SmoothingMode.None;
+            g.FillRectangle(fgBrush, 64, 112, 64, 8, DpiScale);
         }
 
         private void DrawKeyLightOff(Graphics g)
         {
-            float scale = CurrentAutoScaleDimensions.Width / 96f;
-            g.FillRectangle(fgBrush, 72, 102, 48, 8, scale);
+            g.SmoothingMode = SmoothingMode.None;
+            g.FillRectangle(fgBrush, 72, 102, 48, 8, DpiScale);
         }
 
         private void DrawKeyLightOn(Graphics g)
         {
             DrawKeyLightOff(g);
-
-            float scale = CurrentAutoScaleDimensions.Width / 96f;
-            g.DrawLine(fgPen, 40, 94, 61, 99, scale);
-            g.DrawLine(fgPen, 58, 64, 71, 79, scale);
-            g.DrawLine(fgPen, 96, 52, 96, 70, scale);
-            g.DrawLine(fgPen, 134, 64, 121, 79, scale);
-            g.DrawLine(fgPen, 152, 94, 131, 99, scale);
+            g.DrawLine(fgPen, 96, 51, 96, 71, DpiScale);
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.DrawLine(fgPen, 41, 94, 62, 99, DpiScale);
+            g.DrawLine(fgPen, 59, 64, 72, 79, DpiScale);
+            g.DrawLine(fgPen, 133, 64, 120, 79, DpiScale);
+            g.DrawLine(fgPen, 151, 94, 130, 99, DpiScale);
         }
 
         private void DrawVolMuted(Graphics g)
         {
-            float scale = CurrentAutoScaleDimensions.Width / 96f;
-            g.FillPath(fgBrush, Speaker(58, 58, 32, 48, scale));
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.FillPolygon(fgBrush, Speaker(58, 58, 32, 48));
         }
 
         private void DrawVolUnmuted(Graphics g)
         {
             DrawVolMuted(g);
-
-            float scale = CurrentAutoScaleDimensions.Width / 96f;
-            g.DrawArc(fgPen, 80, 70, 24, 24, 300, 120, scale);
-            g.DrawArc(fgPen, 68, 58, 48, 48, 300, 120, scale);
-            g.DrawArc(fgPen, 56, 46, 72, 72, 300, 120, scale);
+            g.DrawArc(fgPen, 80, 70, 24, 24, 300, 120, DpiScale);
+            g.DrawArc(fgPen, 68, 58, 48, 48, 300, 120, DpiScale);
+            g.DrawArc(fgPen, 56, 46, 72, 72, 300, 120, DpiScale);
         }
 
         private void DrawBrightness(Graphics g)
         {
-            float scale = CurrentAutoScaleDimensions.Width / 96f;
             int sunX = 48, sunY = 34;
 
-            g.DrawEllipse(fgPen, sunX + 38, sunY + 38, 20, 20, scale);
+            g.SmoothingMode = SmoothingMode.None;
+            g.DrawLine(fgPen, sunX + 48, sunY,      sunX + 48, sunY + 28, DpiScale);   // top
+            g.DrawLine(fgPen, sunX + 68, sunY + 48, sunX + 96, sunY + 48, DpiScale);   // right
+            g.DrawLine(fgPen, sunX + 48, sunY + 68, sunX + 48, sunY + 96, DpiScale);   // bottom
+            g.DrawLine(fgPen, sunX,      sunY + 48, sunX + 28, sunY + 48, DpiScale);   // left
 
-            g.DrawLine(fgPen, sunX + 48, sunY,      sunX + 48, sunY + 28, scale);  // top
-            g.DrawLine(fgPen, sunX + 82, sunY + 14, sunX + 62, sunY + 34, scale);  // top-right
-            g.DrawLine(fgPen, sunX + 68, sunY + 48, sunX + 96, sunY + 48, scale);  // right
-            g.DrawLine(fgPen, sunX + 82, sunY + 82, sunX + 62, sunY + 62, scale);  // bottom-right
-            g.DrawLine(fgPen, sunX + 48, sunY + 68, sunX + 48, sunY + 96, scale);  // bottom
-            g.DrawLine(fgPen, sunX + 14, sunY + 82, sunX + 34, sunY + 62, scale);  // bottom-left
-            g.DrawLine(fgPen, sunX,      sunY + 48, sunX + 28, sunY + 48, scale);  // left
-            g.DrawLine(fgPen, sunX + 14, sunY + 14, sunX + 34, sunY + 34, scale);  // top-left
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.DrawEllipse(fgPen, sunX + 38, sunY + 38, 20, 20, DpiScale);
+            g.DrawLine(fgPen, sunX + 82, sunY + 14, sunX + 62, sunY + 34, DpiScale);   // top-right
+            g.DrawLine(fgPen, sunX + 82, sunY + 82, sunX + 62, sunY + 62, DpiScale);   // bottom-right
+            g.DrawLine(fgPen, sunX + 14, sunY + 82, sunX + 34, sunY + 62, DpiScale);   // bottom-left
+            g.DrawLine(fgPen, sunX + 14, sunY + 14, sunX + 34, sunY + 34, DpiScale);   // top-left
         }
 
-        private static GraphicsPath Speaker(int x, int y, int w, int h, float scale)
+        private Point[] Speaker(int x, int y, int w, int h)
         {
-            GraphicsPath gp = new();
-            gp.StartFigure();
-
-            int xs = (int)(x * scale),
-                ys = (int)(y * scale),
-                ws = (int)(w * scale),
-                hs = (int)(h * scale),
+            int xs = (int)(x * DpiScale),
+                ys = (int)(y * DpiScale),
+                ws = (int)(w * DpiScale),
+                hs = (int)(h * DpiScale),
                 w2 = ws / 2,
                 h3 = hs / 3;
 
-            Point[] pts =
+            return
             [
-                new(xs, ys + h3),
-                new(xs + w2, ys + h3),
-                new(xs + ws, ys),
-                new(xs + ws, ys + hs),
-                new(xs + w2, ys + h3 + h3),
-                new(xs, ys + h3 + h3),
+                new Point(xs, ys + h3),
+                new Point(xs + w2, ys + h3),
+                new Point(xs + ws, ys),
+                new Point(xs + ws, ys + hs),
+                new Point(xs + w2, ys + h3 + h3),
+                new Point(xs, ys + h3 + h3),
             ];
-            gp.AddLines(pts);
-
-            gp.CloseFigure();
-            return gp;
         }
 
-        private static GraphicsPath Triangle(int x, int y, int w, int h, float scale)
+        private Point[] Triangle(int x, int y, int w, int h)
         {
-            GraphicsPath gp = new();
-            gp.StartFigure();
-
-            int xs = (int)(x * scale),
-                ys = (int)(y * scale),
-                ws = (int)(w * scale),
-                hs = (int)(h * scale),
+            int xs = (int)(x * DpiScale),
+                ys = (int)(y * DpiScale),
+                ws = (int)(w * DpiScale),
+                hs = (int)(h * DpiScale),
                 w2 = ws / 2;
 
-            Point[] pts =
+            return
             [
-                new(xs, ys + hs),
-                new(xs + w2, ys),
-                new(xs + ws, ys + hs),
+                new Point(xs, ys + hs),
+                new Point(xs + w2, ys),
+                new Point(xs + ws, ys + hs),
             ];
-            gp.AddLines(pts);
-
-            gp.CloseFigure();
-            return gp;
         }
         #endregion  // Overlay rendering
 
