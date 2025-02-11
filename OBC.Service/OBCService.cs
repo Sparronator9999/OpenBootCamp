@@ -22,6 +22,9 @@ using System.ComponentModel;
 using System.ServiceProcess;
 using System.IO;
 using System;
+using System.Collections.Generic;
+using System.Text;
+using OBC.Service.Hardware;
 
 namespace OBC.Service
 {
@@ -31,7 +34,7 @@ namespace OBC.Service
 
         private readonly AppleKeyboardDriver KeyAgent = new("KeyAgent");
         private readonly AppleKeyboardDriver KeyMagic = new("AppleKeyboard");
-        private readonly MacHALDriver HAL = new("MacHALDriver");
+        private readonly SMC SMC = new("MacHALDriver");
 
         private KeyboardEventListener Listener;
         private KeyboardBacklight KeyLight;
@@ -86,9 +89,26 @@ namespace OBC.Service
                     "Most (if not all) of OBC's functionality will not work!");
             }
 
-            if (HAL.Open())
+            if (SMC.Open())
             {
-                KeyLight = new(HAL, Config.KeyboardBrightness, Config.KeyboardBrightnessStep);
+                List<string> keys = SMC.GetSupportedKeys();
+                if (keys is null || keys.Count == 0)
+                {
+                    Log.Error(
+                        "Failed to get supported SMC keys:\n" +
+                        $"{new Win32Exception(SMC.ErrorCode)} ({SMC.ErrorCode})");
+                }
+                else
+                {
+                    if (keys.Contains("LKSB"))
+                    {
+                        KeyLight = new(SMC, Config.KeyboardBrightness, Config.KeyboardBrightnessStep);
+                    }
+                    else
+                    {
+                        Log.Warn("SMC reports that keyboard backlight is not supported. Keyboard backlight adjustments will be unavailable.");
+                    }
+                }
             }
             else
             {
@@ -135,7 +155,7 @@ namespace OBC.Service
             Log.Info("Unloading drivers...");
             KeyAgent?.Close();
             KeyMagic?.Close();
-            HAL?.Close();
+            SMC?.Close();
             Log.Info("The OpenBootCamp service has stopped successfully.");
         }
 
@@ -150,7 +170,10 @@ namespace OBC.Service
                 case PowerBroadcastStatus.ResumeCritical:
                 case PowerBroadcastStatus.ResumeSuspend:
                 case PowerBroadcastStatus.ResumeAutomatic:
-                    KeyLight?.SetBacklightEnabled(true);
+                    if (KeyLight is not null)
+                    {
+                        KeyLight.Enabled = true;
+                    }
                     break;
             }
             return true;

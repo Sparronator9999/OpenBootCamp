@@ -16,6 +16,8 @@
 
 namespace OBC.Service
 {
+    // names taken from SMCKit and adapted for MacHALDriver.
+    // link: https://github.com/beltex/SMCKit/blob/master/SMCKit/SMC.swift#L153
     internal enum MacHALDriverIOCTL : uint
     {
         Unknown1 = 0x9C402410u,
@@ -25,12 +27,13 @@ namespace OBC.Service
         Unknown5 = 0x9C402448u,
         Unknown6 = 0x9C40244Cu,
         Unknown7 = 0x9C402450u,
-        Unknown8 = 0x9C402454u,
-        Unknown9 = 0x9C402458u,
-        Unknown10 = 0x9C402460u,
-        Unknown11 = 0x9C402464u,
-        Unknown12 = 0x9C402484u,
-        Unknown13 = 0x9C402488u,
-        Unknown14 = 0x9C40248Cu
+        ReadKey = 0x9C402454u,
+        WriteKey = 0x9C402458u,
+        GetKeyByIndex = 0x9C40245Cu,
+        GetKeyInfo = 0x9C402460u,
+        Unknown12 = 0x9C402464u,
+        Unknown13 = 0x9C402484u,
+        Unknown14 = 0x9C402488u,
+        Unknown15 = 0x9C40248Cu
     }
 }

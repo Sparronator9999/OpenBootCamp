@@ -17,10 +17,20 @@
 using System;
 using System.ComponentModel;
 
-namespace OBC.Service
+namespace OBC.Service.Hardware
 {
     internal sealed class KeyboardBacklight
     {
+        public bool Enabled
+        {
+            get => _enabled;
+            set
+            {
+                _enabled = value;
+                SetBrightness(_enabled ? _brightness : (byte)0);
+            }
+        }
+
         /// <summary>
         /// The brightness of the keyboard backlight,
         /// as a value between 0 and 255.
@@ -31,71 +41,40 @@ namespace OBC.Service
             set
             {
                 _brightness = value;
-                SetBrightness(value);
+                if (_enabled)
+                {
+                    SetBrightness(value);
+                }
             }
         }
 
-        private byte _brightness;
-
         /// <summary>
-        /// The amount to change <see cref="Brightness"/> by when calling
-        /// <see cref="BrightnessUp"/> or <see cref="BrightnessDown"/>.
+        /// The amount to change <see cref="Brightness"/>
+        /// by when the keyboard shortcuts are used.
         /// </summary>
-        public byte Step;
+        public byte Step { get; set; }
 
-        private readonly MacHALDriver HAL;
+        private bool _enabled = true;
+        private byte _brightness;
+        private readonly SMC SMC;
 
-        public KeyboardBacklight(MacHALDriver hal, byte brightness, byte step = 16)
+        public KeyboardBacklight(SMC smc, byte brightness, byte step = 16)
         {
-            HAL = hal;
+            SMC = smc;
             Brightness = brightness;
             Step = step;
         }
 
-        public void BrightnessUp()
-        {
-            if (Brightness + Step > 255)
-            {
-                Brightness = 255;
-            }
-            else
-            {
-                Brightness += Step;
-            }
-        }
-
-        public void BrightnessDown()
-        {
-            if (Brightness - Step < 0)
-            {
-                Brightness = 0;
-            }
-            else
-            {
-                Brightness -= Step;
-            }
-        }
-
-        public bool SetBacklightEnabled(bool enabled)
-        {
-            return enabled ? SetBrightness(Brightness) : SetBrightness(0);
-        }
-
         private bool SetBrightness(byte brightness)
         {
-            byte[] inBuffer =
-            [
-                // "LKSB", followed by the brightness value
-                // (both with null terminators)
-                0x4C, 0x4B, 0x53, 0x42, 0x00, brightness, 0x00
-            ];
             Console.WriteLine(Strings.GetString("kbdBrightSet", brightness));
-            bool success = HAL.IOControl(MacHALDriverIOCTL.Unknown9, inBuffer);
+            bool success = SMC.WriteData("LKSB", brightness, 0);
 
             if (!success)
             {
+                int err = SMC.ErrorCode;
                 Console.WriteLine(Strings.GetString("errIoCtl",
-                    HAL.ErrorCode, new Win32Exception(HAL.ErrorCode).Message));
+                    err, new Win32Exception(err).Message));
             }
             return success;
         }

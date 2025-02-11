@@ -16,6 +16,7 @@
 
 using OBC.Common;
 using OBC.IPC;
+using OBC.Service.Hardware;
 using OBC.Service.Logs;
 using System;
 using System.IO;
@@ -146,9 +147,9 @@ namespace OBC.Service
             // wait for the event listener to stop
             ListenerTask.Wait();
 
-            if (turnOffKeyLight)
+            if (turnOffKeyLight && KeyLight is not null)
             {
-                KeyLight?.SetBacklightEnabled(false);
+                KeyLight.Enabled = false;
             }
 
             // perform cleanup (disposal of events, etc.)
@@ -203,7 +204,14 @@ namespace OBC.Service
                     case 7:    // keyboard light up
                         if (KeyLight is not null)
                         {
-                            KeyLight.BrightnessUp();
+                            if (KeyLight.Brightness + KeyLight.Step > 255)
+                            {
+                                KeyLight.Brightness = 255;
+                            }
+                            else
+                            {
+                                KeyLight.Brightness += KeyLight.Step;
+                            }
                             IPCServer?.PushMessage(new ObcEvent(
                             ObcEventType.KeyLightBright, KeyLight.Brightness * 100 / 255));
                         }
@@ -211,7 +219,14 @@ namespace OBC.Service
                     case 8:    // keyboard light down
                         if (KeyLight is not null)
                         {
-                            KeyLight.BrightnessDown();
+                            if (KeyLight.Brightness - KeyLight.Step < 0)
+                            {
+                                KeyLight.Brightness = 0;
+                            }
+                            else
+                            {
+                                KeyLight.Brightness -= KeyLight.Step;
+                            }
                             IPCServer?.PushMessage(new ObcEvent(
                             ObcEventType.KeyLightBright, KeyLight.Brightness * 100 / 255));
                         }
