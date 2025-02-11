@@ -30,8 +30,6 @@ Additionally, the following bugs from the official Boot Camp Manager are fixed:
 
 Roughly in priority order:
 
-- An overlay when adjusting keyboard backlight, screen brightness, and volume
-  (when not already handled by Windows)
 - A config application. Learn to edit XML for now.
 - A few power saving features:
   - Turn off keyboard backlight when closing laptop lid (something which I
@@ -39,6 +37,15 @@ Roughly in priority order:
   - Set keyboard backlight state based on power source or battery charge (e.g.
     low battery, switching between AC and battery power)
   - Turn off keyboard backlight when keyboard is inactive
+- Fan control + sensor monitoring?
+  - Hopefully this will be doable without adversely affecting battery life
+    (unlike MacsFanControl, which seems to install a driver that stays running
+    even after quitting the program that saps battery life and doesn't
+    uninstall until a reboot)
+  - Possible thanks to [SMCKit](https://github.com/beltex/SMCKit) existing
+    (yes, I know it's for macOS, but having a look at the source was what
+    allowed me to figure out what some of the `MacHALDriver.sys` IOCTLs were
+    for, and how to get a list of every SMC key)
 - Volume control on older Windows versions (7 and earlier?)
 - Smooth keyboard backlight animations
 - More that I haven't thought of yet
