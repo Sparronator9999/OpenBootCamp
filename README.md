@@ -113,15 +113,23 @@ Alternatively, you can [compile the program yourself](#compile).-->
 
 ## FAQ
 
+### Wait, you can install Windows on a Mac?
+
+Yep, and it's [officially supported by Apple](https://support.apple.com/en-us/102622)
+on any Intel Mac (with varying "official" Windows support, but I was able to get
+the latest Windows 10 LTSC single-booting on a 2010 MacBook with few issues).
+
 ### How did you make this?!
+
+(note: this information is slightly outdated. I recently started looking at
+some Apple SMC-related projects on GitHub for more information on how Apple's
+SMCs work, including e.g. [VirtualSMC](https://github.com/acidanthera/VirtualSMC))
 
 By decompiling `Bootcamp.exe` (located at `C:\Program Files\Boot Camp` on a Mac
 running Windows with Boot Camp installed) with [Binary Ninja](https://binary.ninja/).
 
 I was going to use [ghidra](https://github.com/NationalSecurityAgency/ghidra),
 but found Binary Ninja produced more readable pseudo-code.
-
-I will go more in-depth in another document soon.
 
 ### *Why* did you make this?
 
