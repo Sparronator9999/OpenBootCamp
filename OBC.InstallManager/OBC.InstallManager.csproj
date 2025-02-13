@@ -20,9 +20,20 @@
         <ApplicationManifest>app.manifest</ApplicationManifest>
     </PropertyGroup>
     <ItemGroup>
+      <EmbeddedResource Remove="MainForm.resx" />
+    </ItemGroup>
+    <ItemGroup>
+      <None Include="MainForm.resx" />
+    </ItemGroup>
+    <ItemGroup>
       <ProjectReference Include="..\OBC.Common\OBC.Common.csproj" />
     </ItemGroup>
     <ItemGroup>
       <Reference Include="System.ServiceProcess" />
+    </ItemGroup>
+    <ItemGroup>
+      <EmbeddedResource Update="Strings.resx">
+        <Generator></Generator>
+      </EmbeddedResource>
     </ItemGroup>
 </Project>

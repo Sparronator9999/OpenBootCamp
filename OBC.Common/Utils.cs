@@ -53,6 +53,29 @@ public static class Utils
     }
 
     /// <summary>
+    /// Shows a warning dialog.
+    /// </summary>
+    /// <param name="message">
+    /// The message to show in the warning dialog.
+    /// </param>
+    /// <param name="title">
+    /// The text to show in the title bar of the dialog.
+    /// </param>
+    /// <param name="button">
+    /// One of the <see cref="MessageBoxDefaultButton"/> values
+    /// that specifies the default button for the dialog.
+    /// </param>
+    /// <returns>
+    /// One of the <see cref="DialogResult"/> values.
+    /// </returns>
+    public static DialogResult ShowWarning(string message, string title,
+        MessageBoxDefaultButton button = MessageBoxDefaultButton.Button1)
+    {
+        return MessageBox.Show(message, title, MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning, button);
+    }
+
+    /// <summary>
     /// Shows an error dialog.
     /// </summary>
     /// <param name="message">
@@ -235,5 +258,10 @@ public static class Utils
             }
         }
         return 0;
+    }
+
+    public static string GetWin32ErrMsg(int err)
+    {
+        return $"{new Win32Exception(err).Message} ({err})";
     }
 }

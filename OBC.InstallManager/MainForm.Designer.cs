@@ -53,19 +53,19 @@ namespace OBC.InstallManager
             System.Windows.Forms.Label lblMHD;
             System.Windows.Forms.Label lblOBCS;
             System.Windows.Forms.Label lblOBCO;
-            System.Windows.Forms.Label lblOBCOState;
-            System.Windows.Forms.Button btnOBCOInstall;
+            this.lblOBCOState = new System.Windows.Forms.Label();
+            this.btnOBCOInstall = new System.Windows.Forms.Button();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.tblDrivers = new System.Windows.Forms.TableLayoutPanel();
             this.lblMHDState = new System.Windows.Forms.Label();
             this.lblKAState = new System.Windows.Forms.Label();
-            this.btnKAInstall = new System.Windows.Forms.Button();
-            this.btnMHDInstall = new System.Windows.Forms.Button();
             this.lblOBCSState = new System.Windows.Forms.Label();
+            this.btnMHDInstall = new System.Windows.Forms.Button();
+            this.btnKAInstall = new System.Windows.Forms.Button();
             this.btnOBCSInstall = new System.Windows.Forms.Button();
             this.btnOBCSStart = new System.Windows.Forms.Button();
-            this.grpStatus = new System.Windows.Forms.GroupBox();
             this.label1 = new System.Windows.Forms.Label();
+            this.grpStatus = new System.Windows.Forms.GroupBox();
             tsiFile = new System.Windows.Forms.ToolStripMenuItem();
             tsiExit = new System.Windows.Forms.ToolStripMenuItem();
             tsiHelp = new System.Windows.Forms.ToolStripMenuItem();
@@ -75,8 +75,6 @@ namespace OBC.InstallManager
             lblMHD = new System.Windows.Forms.Label();
             lblOBCS = new System.Windows.Forms.Label();
             lblOBCO = new System.Windows.Forms.Label();
-            lblOBCOState = new System.Windows.Forms.Label();
-            btnOBCOInstall = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             this.tblDrivers.SuspendLayout();
             this.grpStatus.SuspendLayout();
@@ -164,26 +162,25 @@ namespace OBC.InstallManager
             // 
             // lblOBCOState
             // 
-            lblOBCOState.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            lblOBCOState.AutoSize = true;
-            lblOBCOState.Enabled = false;
-            lblOBCOState.Location = new System.Drawing.Point(166, 39);
-            lblOBCOState.Margin = new System.Windows.Forms.Padding(3);
-            lblOBCOState.Name = "lblOBCOState";
-            lblOBCOState.Size = new System.Drawing.Size(79, 15);
-            lblOBCOState.TabIndex = 5;
-            lblOBCOState.Text = "Coming soon";
+            this.lblOBCOState.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.lblOBCOState.AutoSize = true;
+            this.lblOBCOState.Location = new System.Drawing.Point(166, 39);
+            this.lblOBCOState.Margin = new System.Windows.Forms.Padding(3);
+            this.lblOBCOState.Name = "lblOBCOState";
+            this.lblOBCOState.Size = new System.Drawing.Size(92, 15);
+            this.lblOBCOState.TabIndex = 5;
+            this.lblOBCOState.Text = "Unknown status";
             // 
             // btnOBCOInstall
             // 
-            btnOBCOInstall.AutoSize = true;
-            btnOBCOInstall.Enabled = false;
-            btnOBCOInstall.Location = new System.Drawing.Point(364, 34);
-            btnOBCOInstall.Name = "btnOBCOInstall";
-            btnOBCOInstall.Size = new System.Drawing.Size(75, 25);
-            btnOBCOInstall.TabIndex = 12;
-            btnOBCOInstall.Text = "Install";
-            btnOBCOInstall.UseVisualStyleBackColor = true;
+            this.btnOBCOInstall.AutoSize = true;
+            this.btnOBCOInstall.Location = new System.Drawing.Point(364, 34);
+            this.btnOBCOInstall.Name = "btnOBCOInstall";
+            this.btnOBCOInstall.Size = new System.Drawing.Size(75, 25);
+            this.btnOBCOInstall.TabIndex = 12;
+            this.btnOBCOInstall.Text = "Install";
+            this.btnOBCOInstall.UseVisualStyleBackColor = true;
+            this.btnOBCOInstall.Click += new System.EventHandler(this.btnOBCOInstall_Click);
             // 
             // menuStrip1
             // 
@@ -214,10 +211,10 @@ namespace OBC.InstallManager
             this.tblDrivers.Controls.Add(lblOBCS, 0, 0);
             this.tblDrivers.Controls.Add(this.lblOBCSState, 1, 0);
             this.tblDrivers.Controls.Add(lblOBCO, 0, 1);
-            this.tblDrivers.Controls.Add(lblOBCOState, 1, 1);
+            this.tblDrivers.Controls.Add(this.lblOBCOState, 1, 1);
             this.tblDrivers.Controls.Add(this.btnMHDInstall, 4, 3);
             this.tblDrivers.Controls.Add(this.btnKAInstall, 4, 2);
-            this.tblDrivers.Controls.Add(btnOBCOInstall, 4, 1);
+            this.tblDrivers.Controls.Add(this.btnOBCOInstall, 4, 1);
             this.tblDrivers.Controls.Add(this.btnOBCSInstall, 4, 0);
             this.tblDrivers.Controls.Add(this.btnOBCSStart, 3, 0);
             this.tblDrivers.Controls.Add(this.label1, 0, 4);
@@ -256,16 +253,16 @@ namespace OBC.InstallManager
             this.lblKAState.TabIndex = 4;
             this.lblKAState.Text = "Unknown status";
             // 
-            // btnKAInstall
+            // lblOBCSState
             // 
-            this.btnKAInstall.AutoSize = true;
-            this.btnKAInstall.Location = new System.Drawing.Point(364, 65);
-            this.btnKAInstall.Name = "btnKAInstall";
-            this.btnKAInstall.Size = new System.Drawing.Size(75, 25);
-            this.btnKAInstall.TabIndex = 6;
-            this.btnKAInstall.Text = "Install";
-            this.btnKAInstall.UseVisualStyleBackColor = true;
-            this.btnKAInstall.Click += new System.EventHandler(this.btnKAInstall_Click);
+            this.lblOBCSState.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.lblOBCSState.AutoSize = true;
+            this.lblOBCSState.Location = new System.Drawing.Point(166, 8);
+            this.lblOBCSState.Margin = new System.Windows.Forms.Padding(3);
+            this.lblOBCSState.Name = "lblOBCSState";
+            this.lblOBCSState.Size = new System.Drawing.Size(92, 15);
+            this.lblOBCSState.TabIndex = 4;
+            this.lblOBCSState.Text = "Unknown status";
             // 
             // btnMHDInstall
             // 
@@ -278,16 +275,16 @@ namespace OBC.InstallManager
             this.btnMHDInstall.UseVisualStyleBackColor = true;
             this.btnMHDInstall.Click += new System.EventHandler(this.btnMHDInstall_Click);
             // 
-            // lblOBCSState
+            // btnKAInstall
             // 
-            this.lblOBCSState.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.lblOBCSState.AutoSize = true;
-            this.lblOBCSState.Location = new System.Drawing.Point(166, 8);
-            this.lblOBCSState.Margin = new System.Windows.Forms.Padding(3);
-            this.lblOBCSState.Name = "lblOBCSState";
-            this.lblOBCSState.Size = new System.Drawing.Size(92, 15);
-            this.lblOBCSState.TabIndex = 4;
-            this.lblOBCSState.Text = "Unknown status";
+            this.btnKAInstall.AutoSize = true;
+            this.btnKAInstall.Location = new System.Drawing.Point(364, 65);
+            this.btnKAInstall.Name = "btnKAInstall";
+            this.btnKAInstall.Size = new System.Drawing.Size(75, 25);
+            this.btnKAInstall.TabIndex = 6;
+            this.btnKAInstall.Text = "Install";
+            this.btnKAInstall.UseVisualStyleBackColor = true;
+            this.btnKAInstall.Click += new System.EventHandler(this.btnKAInstall_Click);
             // 
             // btnOBCSInstall
             // 
@@ -311,18 +308,6 @@ namespace OBC.InstallManager
             this.btnOBCSStart.UseVisualStyleBackColor = true;
             this.btnOBCSStart.Click += new System.EventHandler(this.btnOBCSStart_Click);
             // 
-            // grpStatus
-            // 
-            this.grpStatus.AutoSize = true;
-            this.grpStatus.Controls.Add(this.tblDrivers);
-            this.grpStatus.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.grpStatus.Location = new System.Drawing.Point(0, 24);
-            this.grpStatus.Name = "grpStatus";
-            this.grpStatus.Size = new System.Drawing.Size(448, 168);
-            this.grpStatus.TabIndex = 12;
-            this.grpStatus.TabStop = false;
-            this.grpStatus.Text = "Status";
-            // 
             // label1
             // 
             this.label1.Anchor = System.Windows.Forms.AnchorStyles.Top;
@@ -335,6 +320,18 @@ namespace OBC.InstallManager
             this.label1.Size = new System.Drawing.Size(329, 15);
             this.label1.TabIndex = 13;
             this.label1.Text = "Hover over an item for a brief description of what it does.";
+            // 
+            // grpStatus
+            // 
+            this.grpStatus.AutoSize = true;
+            this.grpStatus.Controls.Add(this.tblDrivers);
+            this.grpStatus.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.grpStatus.Location = new System.Drawing.Point(0, 24);
+            this.grpStatus.Name = "grpStatus";
+            this.grpStatus.Size = new System.Drawing.Size(448, 168);
+            this.grpStatus.TabIndex = 12;
+            this.grpStatus.TabStop = false;
+            this.grpStatus.Text = "Status";
             // 
             // MainForm
             // 
@@ -375,6 +372,8 @@ namespace OBC.InstallManager
         private System.Windows.Forms.Button btnOBCSInstall;
         private System.Windows.Forms.Button btnOBCSStart;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Button btnOBCOInstall;
+        private System.Windows.Forms.Label lblOBCOState;
     }
 }
 

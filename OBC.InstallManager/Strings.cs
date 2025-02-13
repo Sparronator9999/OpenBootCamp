@@ -17,7 +17,7 @@
 using System.Globalization;
 using System.Resources;
 
-namespace OBC.Common;
+namespace OBC.InstallManager;
 
 /// <summary>
 /// A resource class for retrieving strings.
