@@ -14,14 +14,22 @@
 // You should have received a copy of the GNU General Public License along with
 // OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
 
-namespace OBC.Service
+using OBC.Common;
+
+namespace OBC.Service;
+
+internal sealed class AppleKbdDriver : Driver
 {
-    internal enum AppleKeyboardIOCTL : uint
+    public AppleKbdDriver(string name) : base(name) { }
+
+    internal bool IOControl(AppleKbdIoCtl ctlCode)
     {
-        SetOSXFnBehaviour = 0xB403201Cu,
-        Unknown1 = 0xB4032013u,
-        PalmReject1 = 0xB4032020u,
-        PalmReject2 = 0xB4032024u,
-        AcpiBrightnessAvailable = 0xB4032048,
+        return IOControl((uint)ctlCode);
+    }
+
+    internal bool IOControl<T>(AppleKbdIoCtl ctlCode, ref T buffer, bool isOutBuffer = false)
+        where T : unmanaged
+    {
+        return IOControl((uint)ctlCode, ref buffer, isOutBuffer);
     }
 }

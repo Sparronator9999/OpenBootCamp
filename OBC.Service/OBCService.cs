@@ -14,202 +14,145 @@
 // You should have received a copy of the GNU General Public License along with
 // OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
 
-using Microsoft.Win32;
-using OBC.Common;
 using OBC.Config;
-using OBC.Service.Logs;
-using System.ComponentModel;
-using System.ServiceProcess;
-using System.IO;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using OBC.Service.Hardware;
+using OBC.Service.Logs;
+using System;
+using System.IO;
+using System.ServiceProcess;
 
-namespace OBC.Service
+namespace OBC.Service;
+
+internal sealed class OBCService : ServiceBase
 {
-    internal sealed class OBCService : ServiceBase
+    private readonly Logger Log;
+
+    private readonly SMC SMC = new("MacHALDriver");
+
+    private KbdEventListener Listener;
+
+    private ObcConfig Config;
+    private readonly string ConfPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+        "Sparronator9999", "OpenBootCamp", "obc.xml");
+
+    public OBCService(Logger logger)
     {
-        private readonly Logger Log;
+        CanHandlePowerEvent = true;
+        CanShutdown = true;
+        Log = logger;
+    }
 
-        private readonly AppleKeyboardDriver KeyAgent = new("KeyAgent");
-        private readonly AppleKeyboardDriver KeyMagic = new("AppleKeyboard");
-        private readonly SMC SMC = new("MacHALDriver");
+    protected override void OnStart(string[] args)
+    {
+        Log.Info(Strings.GetString("svcStarting"));
 
-        private KeyboardEventListener Listener;
-        private KeyboardBacklight KeyLight;
+        LoadConf();
 
-        private ObcConfig Config;
-        private readonly string ConfPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "Sparronator9999", "OpenBootCamp", "obc.xml");
-
-        public OBCService(Logger logger)
+        Log.Info("Initialising drivers...");
+        if (!SMC.Open())
         {
-            CanHandlePowerEvent = true;
-            CanShutdown = true;
-            Log = logger;
+            Log.Warn(Strings.GetString("errNoMHD"));
         }
-
-        protected override void OnStart(string[] args)
+        /*else
         {
-            Log.Info("Starting the OpenBootCamp service...");
-
-            LoadConf();
-
-            Log.Info("Initialising drivers...");
-            if (KeyMagic.Open())
+            SMCKeyInfo[] keys = SMC.GetSupportedKeys();
+            if (keys is null || keys.Length == 0)
             {
-                Log.Info("Setting OSXFnBehavior from registry key...");
-
-                RegistryKey aksKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Apple Inc.\Apple Keyboard Support");
-                int value = 0;
-                if (aksKey is not null)
-                {
-                    value = (int)aksKey.GetValue("OSXFnBehavior", 0);
-                    aksKey.Close();
-                }
-
-                if (!KeyMagic.IOControl(AppleKeyboardIOCTL.SetOSXFnBehaviour, ref value))
-                {
-                    Log.Error("Failed to set OSXFnBehavior!");
-                    LogIoControlError(KeyMagic);
-                }
-
-                value = Config.UseAcpiBrightness ? 1 : 0;
-                if (!KeyMagic.IOControl(AppleKeyboardIOCTL.AcpiBrightnessAvailable, ref value))
-                {
-                    Log.Error("Failed to make an IOCTL_ACPI_BRIGHTNESS_AVAILABLE call to Keymagic!");
-                    LogIoControlError(KeyMagic);
-                }
+                Log.Error(
+                    "Failed to get supported SMC keys:\n" +
+                    $"{Utils.GetWin32ErrMsg(SMC.ErrorCode)}");
             }
             else
             {
-                Log.Error("Failed to connect to Keymagic.sys!\n" +
-                    "Most (if not all) of OBC's functionality will not work!");
-            }
+                Log.Debug("Supported SMC keys:");
+                for (int i = 0; i < keys.Length; i++)
+                {
+                    StringBuilder sb = new($"{i:X4}");
 
-            if (SMC.Open())
-            {
-                List<string> keys = SMC.GetSupportedKeys();
-                if (keys is null || keys.Count == 0)
-                {
-                    Log.Error(
-                        "Failed to get supported SMC keys:\n" +
-                        $"{new Win32Exception(SMC.ErrorCode)} ({SMC.ErrorCode})");
-                }
-                else
-                {
-                    if (keys.Contains("LKSB"))
-                    {
-                        KeyLight = new(SMC, Config.KeyboardBrightness, Config.KeyboardBrightnessStep);
-                    }
-                    else
-                    {
-                        Log.Warn("SMC reports that keyboard backlight is not supported. Keyboard backlight adjustments will be unavailable.");
-                    }
+                    sb.Append($": {keys[i].Key}, len = 0x{keys[i].Length:X2}, type = {keys[i].TypeString}, attr = {keys[i].Attributes}");
+                    Log.Debug(sb.ToString());
                 }
             }
-            else
-            {
-                Log.Warn("Failed to connect to MacHALDriver.sys!\n" +
-                    "Keyboard backlight adjustments will be unavailable!");
-            }
+        }*/
 
-            if (KeyAgent.Open())
-            {
-                Listener = new(KeyAgent, Log, KeyLight);
-                Listener.Start();
-            }
-            else
-            {
-                Log.Warn(
-                    "Failed to connect to KeyAgent.sys!\n" +
-                    "Some special Fn keys will not work!");
-            }
-            Log.Info("Started the OpenBootCamp service.");
+        if (Config.KbdEventListener.Enabled)
+        {
+            Listener = new(Config.KbdEventListener, Log, SMC);
+            Listener.Start();
         }
 
-        protected override void OnStop()
+        if (Config.FanControl.Enabled)
         {
-            StopService();
+            Log.Warn("Fan control module is enabled, but hasn't been implemented yet!");
         }
+    }
 
-        protected override void OnShutdown()
+    protected override void OnStop()
+    {
+        StopService();
+    }
+
+    protected override void OnShutdown()
+    {
+        StopService();
+    }
+
+    private void StopService()
+    {
+        Log.Info(Strings.GetString("svcStopping"));
+        Listener?.Stop();
+
+        Log.Info("Saving config...");
+        Config.Save(ConfPath);
+
+        Log.Info("Unloading drivers...");
+        SMC?.Close();
+        Log.Info(Strings.GetString("svcStopped"));
+    }
+
+    //protected override void OnPause() { }
+
+    //protected override void OnContinue() { }
+
+    protected override bool OnPowerEvent(PowerBroadcastStatus powerStatus)
+    {
+        switch (powerStatus)
         {
-            StopService();
+            case PowerBroadcastStatus.ResumeCritical:
+            case PowerBroadcastStatus.ResumeSuspend:
+            case PowerBroadcastStatus.ResumeAutomatic:
+                Listener?.OnWake();
+                break;
+            case PowerBroadcastStatus.Suspend:
+                Listener?.OnSleep();
+                break;
         }
+        return true;
+    }
 
-        private void StopService()
+    private void LoadConf()
+    {
+        Log.Info(Strings.GetString("svcConfLoading"));
+
+        if (File.Exists(ConfPath))
         {
-            Log.Info("Stopping the OpenBootCamp service...");
-            Listener?.Stop();
-
-            Log.Info("Saving config...");
-            if (KeyLight != null)
+            try
             {
-                Config.KeyboardBrightness = KeyLight.Brightness;
+                Config = ObcConfig.Load(ConfPath);
             }
-            Config.Save(ConfPath);
-
-            Log.Info("Unloading drivers...");
-            KeyAgent?.Close();
-            KeyMagic?.Close();
-            SMC?.Close();
-            Log.Info("The OpenBootCamp service has stopped successfully.");
-        }
-
-        //protected override void OnPause() { }
-
-        //protected override void OnContinue() { }
-
-        protected override bool OnPowerEvent(PowerBroadcastStatus powerStatus)
-        {
-            if (KeyLight is not null)
+            catch (InvalidConfigException)
             {
-                switch (powerStatus)
-                {
-                    case PowerBroadcastStatus.Suspend:
-                        KeyLight.Enabled = false;
-                        break;
-                }
+                Log.Warn(Strings.GetString("wrnBadConf"));
+                Config = new ObcConfig();
             }
-            return true;
+
+            Log.Info(Strings.GetString("svcConfLoaded"));
         }
-
-        private void LogIoControlError(Driver driver)
+        else
         {
-            Log.Info($"DeviceIoControl failed with error {driver.ErrorCode} " +
-                $"({new Win32Exception(driver.ErrorCode).Message})");
-        }
-
-        private void LoadConf()
-        {
-            Log.Info("Loading config (obc.xml)...");
-
-            if (File.Exists(ConfPath))
-            {
-                try
-                {
-                    Config = ObcConfig.Load(ConfPath);
-                }
-                catch (InvalidConfigException)
-                {
-                    Log.Warn(
-                        "Invalid OpenBootCamp config!\n" +
-                        "Using default settings...");
-                    Config = new ObcConfig(true, 0, 16);
-                }
-
-                Log.Info("Loaded the OpenBootCamp config successfully!");
-            }
-            else
-            {
-                Log.Warn(
-                    "OpenBootCamp config not found!\n" +
-                    "The default settings will be used.");
-                Config = new ObcConfig(true, 0, 16);
-            }
+            Log.Warn(Strings.GetString("wrnNoConf"));
+            Config = new ObcConfig();
         }
     }
 }

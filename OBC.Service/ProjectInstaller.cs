@@ -18,31 +18,30 @@ using System.ComponentModel;
 using System.Configuration.Install;
 using System.ServiceProcess;
 
-namespace OBC.Service
+namespace OBC.Service;
+
+[RunInstaller(true)]
+public sealed class ProjectInstaller : Installer
 {
-    [RunInstaller(true)]
-    public sealed class ProjectInstaller : Installer
+    public ProjectInstaller()
     {
-        public ProjectInstaller()
+        ServiceInstaller installer = new()
         {
-            ServiceInstaller installer = new()
-            {
-                Description = Strings.GetString("svcDesc"),
-                DisplayName = "OpenBootCamp service",
-                ServiceName = "obcsvc",
-                StartType = ServiceStartMode.Automatic,
-            };
+            Description = Strings.GetString("svcDesc"),
+            DisplayName = "OpenBootCamp service",
+            ServiceName = "obcsvc",
+            StartType = ServiceStartMode.Automatic,
+        };
 
-            ServiceProcessInstaller processInstaller = new()
-            {
-                Account = ServiceAccount.LocalSystem,
-            };
+        ServiceProcessInstaller processInstaller = new()
+        {
+            Account = ServiceAccount.LocalSystem,
+        };
 
-            Installers.AddRange(
-            [
-                installer,
-                processInstaller,
-            ]);
-        }
+        Installers.AddRange(
+        [
+            installer,
+            processInstaller,
+        ]);
     }
 }

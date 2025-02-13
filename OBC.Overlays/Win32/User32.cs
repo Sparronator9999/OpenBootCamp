@@ -17,105 +17,104 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace OBC.Overlays.Win32
+namespace OBC.Overlays.Win32;
+
+internal static class User32
 {
-    internal static class User32
+    private static IntPtr hNotify;
+
+    public static Guid LidSwitchGuid = new("BA3E0F4D-B817-4094-A2D1-D56379E6A0F3");
+
+    internal static bool SetBlur(IntPtr hWnd, bool enable)
     {
-        private static IntPtr hNotify;
-
-        public static Guid LidSwitchGuid = new("BA3E0F4D-B817-4094-A2D1-D56379E6A0F3");
-
-        internal static bool SetBlur(IntPtr hWnd, bool enable)
+        // TODO: support windows versions other than 10 (and probably 11)
+        AccentPolicy accentPolicy = new()
         {
-            // TODO: support windows versions other than 10 (and probably 11)
-            AccentPolicy accentPolicy = new()
+            AccentState = enable ? 4 : 0,
+            AccentFlags = 0,
+            Color = 0x01000000,
+            AnimationId = 0
+        };
+        int accentSize = Marshal.SizeOf(accentPolicy);
+        IntPtr accentPtr = Marshal.AllocHGlobal(accentSize);
+        try
+        {
+            Marshal.StructureToPtr(accentPolicy, accentPtr, false);
+
+            WindowCompositionAttributeData data = new()
             {
-                AccentState = enable ? 4 : 0,
-                AccentFlags = 0,
-                Color = 0x01000000,
-                AnimationId = 0
+                Attribute = 19,
+                Data = accentPtr,
+                SizeOfData = accentSize,
             };
-            int accentSize = Marshal.SizeOf(accentPolicy);
-            IntPtr accentPtr = Marshal.AllocHGlobal(accentSize);
-            try
-            {
-                Marshal.StructureToPtr(accentPolicy, accentPtr, false);
-
-                WindowCompositionAttributeData data = new()
-                {
-                    Attribute = 19,
-                    Data = accentPtr,
-                    SizeOfData = accentSize,
-                };
-                return SetWindowCompositionAttribute(hWnd, ref data) == 0;
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(accentPtr);
-            }
+            return SetWindowCompositionAttribute(hWnd, ref data) == 0;
         }
-
-        internal static bool RegisterLidEvents(IntPtr hWnd)
+        finally
         {
-            if (hNotify == IntPtr.Zero)
+            Marshal.FreeHGlobal(accentPtr);
+        }
+    }
+
+    internal static bool RegisterLidEvents(IntPtr hWnd)
+    {
+        if (hNotify == IntPtr.Zero)
+        {
+            hNotify = RegisterPowerSettingNotification(hWnd, ref LidSwitchGuid, 0);
+            return hNotify != IntPtr.Zero;
+        }
+        return false;
+    }
+
+    internal static bool UnregisterLidEvents()
+    {
+        if (hNotify != IntPtr.Zero)
+        {
+            if (!UnregisterPowerSettingNotification(hNotify))
             {
-                hNotify = RegisterPowerSettingNotification(hWnd, ref LidSwitchGuid, 0);
-                return hNotify != IntPtr.Zero;
+                return false;
             }
-            return false;
+            hNotify = IntPtr.Zero;
         }
-
-        internal static bool UnregisterLidEvents()
-        {
-            if (hNotify != IntPtr.Zero)
-            {
-                if (!UnregisterPowerSettingNotification(hNotify))
-                {
-                    return false;
-                }
-                hNotify = IntPtr.Zero;
-            }
-            return true;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct WindowCompositionAttributeData
-        {
-            public int Attribute;
-            public IntPtr Data;
-            public int SizeOfData;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct AccentPolicy
-        {
-            public int AccentState;
-            public int AccentFlags;
-            public uint Color;
-            public int AnimationId;
-        }
-
-        [DllImport("User32", ExactSpelling = true, SetLastError = true)]
-        private static extern int SetWindowCompositionAttribute(
-            IntPtr hWnd,
-            ref WindowCompositionAttributeData data);
-
-        [DllImport("User32", ExactSpelling = true, SetLastError = true)]
-        private static extern IntPtr RegisterPowerSettingNotification(
-            IntPtr hRecipient,
-            ref Guid PowerSettingGuid,
-            uint Flags);
-
-        [DllImport("User32", ExactSpelling = true, SetLastError = true)]
-        private static extern bool UnregisterPowerSettingNotification(
-            IntPtr Handle);
+        return true;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct PowerBroadcastSetting
+    private struct WindowCompositionAttributeData
     {
-        public Guid PowerSetting;
-        public int DataLength;
-        public int Data;
+        public int Attribute;
+        public IntPtr Data;
+        public int SizeOfData;
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct AccentPolicy
+    {
+        public int AccentState;
+        public int AccentFlags;
+        public uint Color;
+        public int AnimationId;
+    }
+
+    [DllImport("User32", ExactSpelling = true, SetLastError = true)]
+    private static extern int SetWindowCompositionAttribute(
+        IntPtr hWnd,
+        ref WindowCompositionAttributeData data);
+
+    [DllImport("User32", ExactSpelling = true, SetLastError = true)]
+    private static extern IntPtr RegisterPowerSettingNotification(
+        IntPtr hRecipient,
+        ref Guid PowerSettingGuid,
+        uint Flags);
+
+    [DllImport("User32", ExactSpelling = true, SetLastError = true)]
+    private static extern bool UnregisterPowerSettingNotification(
+        IntPtr Handle);
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct PowerBroadcastSetting
+{
+    public Guid PowerSetting;
+    public int DataLength;
+    public int Data;
 }

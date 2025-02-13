@@ -14,41 +14,40 @@
 // You should have received a copy of the GNU General Public License along with
 // OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
 
-namespace OBC.Service.Logs
+namespace OBC.Service.Logs;
+
+/// <summary>
+/// The verbosity of logs
+/// </summary>
+public enum LogLevel
 {
     /// <summary>
-    /// The verbosity of logs
+    /// Do not log anything.
     /// </summary>
-    public enum LogLevel
-    {
-        /// <summary>
-        /// Do not log anything.
-        /// </summary>
-        NONE,
+    NONE,
 
-        /// <summary>
-        /// Only log Fatal events.
-        /// </summary>
-        FATAL,
+    /// <summary>
+    /// Only log Fatal events.
+    /// </summary>
+    FATAL,
 
-        /// <summary>
-        /// Log Errors and Fatal events.
-        /// </summary>
-        ERROR,
+    /// <summary>
+    /// Log Errors and Fatal events.
+    /// </summary>
+    ERROR,
 
-        /// <summary>
-        /// Log Warnings, Errors, and Fatal events.
-        /// </summary>
-        WARN,
+    /// <summary>
+    /// Log Warnings, Errors, and Fatal events.
+    /// </summary>
+    WARN,
 
-        /// <summary>
-        /// Log all events, except for Debug events.
-        /// </summary>
-        INFO,
+    /// <summary>
+    /// Log all events, except for Debug events.
+    /// </summary>
+    INFO,
 
-        /// <summary>
-        /// Log all events.
-        /// </summary>
-        DEBUG,
-    }
+    /// <summary>
+    /// Log all events.
+    /// </summary>
+    DEBUG,
 }

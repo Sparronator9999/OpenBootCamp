@@ -19,324 +19,208 @@ using System.IO;
 using System.IO.Compression;
 using System.Reflection;
 
-namespace OBC.Service.Logs
+namespace OBC.Service.Logs;
+
+/// <summary>
+/// A simple logger class for writing logs to
+/// the console or a configurable file path.
+/// </summary>
+internal sealed class Logger : IDisposable
 {
+    /// <summary>
+    /// The <see cref="StreamWriter"/> to write log files to.
+    /// </summary>
+    private StreamWriter LogWriter;
 
     /// <summary>
-    /// A simple logger class for writing logs to
-    /// the console or a configurable file path.
+    /// The newline characters to split provided log message lines by.
     /// </summary>
-    internal sealed class Logger : IDisposable
+    private static readonly char[] NewLine = ['\r', '\n'];
+
+    /// <summary>
+    /// The directory in which log files are saved.
+    /// </summary>
+    public string LogDir;
+
+    /// <summary>
+    /// The base name of the log file.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Log files will have the <c>.log</c> extension appended.
+    /// </para>
+    /// <para>
+    /// Archives will have a number appended before the <c>.log</c>
+    /// extension, with higher numbers indicating older logs.
+    /// </para>
+    /// </remarks>
+    public string LogName;
+
+    private string LogPath => Path.Combine(LogDir, LogName);
+
+    /// <summary>
+    /// The maximum number of logs to archive.
+    /// </summary>
+    public int MaxArchived = 9;
+
+    public Logger()
     {
-        /// <summary>
-        /// The <see cref="StreamWriter"/> to write log files to.
-        /// </summary>
-        private StreamWriter LogWriter;
+        string exePath = Assembly.GetEntryAssembly().Location;
 
-        /// <summary>
-        /// Used with <see langword="lock"/> to prevent more
-        /// than one thread writing to the console at once.
-        /// </summary>
-        private readonly object conLock = new();
+        LogDir = Path.GetDirectoryName(exePath);
+        LogName = Path.GetFileName(exePath);
+    }
 
-        /// <summary>
-        /// The newline characters to split provided log message lines by.
-        /// </summary>
-        private static readonly char[] NewLine = ['\r', '\n'];
+    /// <summary>
+    /// Writes a Debug event to the <see cref="Logger"/>.
+    /// </summary>
+    /// <param name="msg">
+    /// The message to write to the log.
+    /// </param>
+    public void Debug(string msg)
+    {
+        LogFile(msg, LogLevel.DEBUG);
+    }
 
-        /// <summary>
-        /// The directory in which log files are saved.
-        /// </summary>
-        public string LogDir;
+    /// <summary>
+    /// Writes an Info event to the <see cref="Logger"/>.
+    /// </summary>
+    /// <param name="msg">
+    /// The message to write to the log.
+    /// </param>
+    public void Info(string msg)
+    {
+        LogFile(msg, LogLevel.INFO);
+    }
 
-        /// <summary>
-        /// The base name of the log file.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// Log files will have the <c>.log</c> extension appended.
-        /// </para>
-        /// <para>
-        /// Archives will have a number appended before the <c>.log</c>
-        /// extension, with higher numbers indicating older logs.
-        /// </para>
-        /// </remarks>
-        public string LogName;
+    /// <summary>
+    /// Writes a Warning to the <see cref="Logger"/>.
+    /// </summary>
+    /// <param name="msg">
+    /// The message to write to the log.
+    /// </param>
+    public void Warn(string msg)
+    {
+        LogFile(msg, LogLevel.WARN);
+    }
 
-        private string LogPath => Path.Combine(LogDir, LogName);
+    /// <summary>
+    /// Writes an Error to the <see cref="Logger"/>.
+    /// </summary>
+    /// <param name="msg">
+    /// The message to write to the log.
+    /// </param>
+    public void Error(string msg)
+    {
+        LogFile(msg, LogLevel.ERROR);
+    }
 
-        /// <summary>
-        /// The maximum number of logs to archive.
-        /// </summary>
-        public int MaxArchived = 9;
+    /// <summary>
+    /// Writes a Fatal error to the <see cref="Logger"/>. Use when an
+    /// application is about to terminate due to a fatal error.
+    /// </summary>
+    /// <param name="msg">
+    /// The message to write to the log.
+    /// </param>
+    public void Fatal(string msg)
+    {
+        LogFile(msg, LogLevel.FATAL);
+    }
 
-        /// <summary>
-        /// How verbose should console logs be?
-        /// </summary>
-        public LogLevel ConsoleLevel = LogLevel.INFO;
-
-        /// <summary>
-        /// How verbose should logs written to disk be?
-        /// </summary>
-        public LogLevel FileLevel = LogLevel.INFO;
-
-        /// <summary>
-        /// Should the log time be shown in console logs?
-        /// </summary>
-        public bool TimeToConsole;
-
-        /// <summary>
-        /// Should the log time be shown in logs written to disk?
-        /// </summary>
-        public bool TimeToFile = true;
-
-        public Logger()
+    /// <summary>
+    /// Deletes all archived logs (files ending with .[number].log.gz).
+    /// </summary>
+    public void DeleteArchived()
+    {
+        for (int i = 1; i <= MaxArchived; i++)
         {
-            string exePath = Assembly.GetEntryAssembly().Location;
+            try
+            {
+                File.Delete($"{LogPath}.{i}.log.gz");
+            }
+            catch (FileNotFoundException) { }
+        }
+    }
 
-            LogDir = Path.GetDirectoryName(exePath);
-            LogName = Path.GetFileName(exePath);
+    private void LogFile(string msg, LogLevel level)
+    {
+        if (msg is null)
+        {
+            return;
         }
 
-        /// <summary>
-        /// Writes a Debug event to the <see cref="Logger"/>.
-        /// </summary>
-        /// <param name="msg">
-        /// The message to write to the log.
-        /// </param>
-        public void Debug(string msg)
+        if (LogWriter is null)
         {
-            if (FileLevel >= LogLevel.DEBUG)
-            {
-                LogFile(msg, LogLevel.DEBUG);
-            }
-
-            if (ConsoleLevel >= LogLevel.DEBUG)
-            {
-                LogConsole(msg, LogLevel.DEBUG);
-            }
+            InitLogFile();
         }
 
-        /// <summary>
-        /// Writes an Info event to the <see cref="Logger"/>.
-        /// </summary>
-        /// <param name="msg">
-        /// The message to write to the log.
-        /// </param>
-        public void Info(string msg)
+        lock (LogWriter)
         {
-            if (FileLevel >= LogLevel.INFO)
+            foreach (string str in msg.Split(NewLine, StringSplitOptions.RemoveEmptyEntries))
             {
-                LogFile(msg, LogLevel.INFO);
-            }
-
-            if (ConsoleLevel >= LogLevel.INFO)
-            {
-                LogConsole(msg, LogLevel.INFO);
+                LogWriter.WriteLine($"[{DateTime.Now:dd/MM/yyyy HH:mm:ss.fff}] {$"[{level}]",-8} {str}");
             }
         }
+    }
 
-        /// <summary>
-        /// Writes a Warning to the <see cref="Logger"/>.
-        /// </summary>
-        /// <param name="msg">
-        /// The message to write to the log.
-        /// </param>
-        public void Warn(string msg)
+    /// <summary>
+    /// Initialises the log file.
+    /// Call before any attempts to write a log file.
+    /// </summary>
+    private void InitLogFile()
+    {
+        // create log directory if it doesn't exist already
+        Directory.CreateDirectory(LogDir);
+
+        // Rename old log files, and delete the oldest file if
+        // there's too many log files
+        for (int i = MaxArchived; i >= 0; i--)
         {
-            if (FileLevel >= LogLevel.WARN)
+            try
             {
-                LogFile(msg, LogLevel.WARN);
-            }
-
-            if (ConsoleLevel >= LogLevel.WARN)
-            {
-                LogConsole(msg, LogLevel.WARN);
-            }
-        }
-
-        /// <summary>
-        /// Writes an Error to the <see cref="Logger"/>.
-        /// </summary>
-        /// <param name="msg">
-        /// The message to write to the log.
-        /// </param>
-        public void Error(string msg)
-        {
-            if (FileLevel >= LogLevel.ERROR)
-            {
-                LogFile(msg, LogLevel.ERROR);
-            }
-
-            if (ConsoleLevel >= LogLevel.ERROR)
-            {
-                LogConsole(msg, LogLevel.ERROR);
-            }
-        }
-
-        /// <summary>
-        /// Writes a Fatal error to the <see cref="Logger"/>. Use when an
-        /// application is about to terminate due to a fatal error.
-        /// </summary>
-        /// <param name="msg">
-        /// The message to write to the log.
-        /// </param>
-        public void Fatal(string msg)
-        {
-            if (FileLevel >= LogLevel.FATAL)
-            {
-                LogFile(msg, LogLevel.FATAL);
-            }
-
-            if (ConsoleLevel >= LogLevel.FATAL)
-            {
-                LogConsole(msg, LogLevel.FATAL);
-            }
-        }
-
-        private static string LogString(string str, LogLevel level, bool date)
-        {
-            return $"{(date ? $"[{DateTime.Now:dd/MM/yyyy HH:mm:ss.fff}] " : "")}{$"[{level}]",-8} {str}";
-        }
-
-        /// <summary>
-        /// Deletes all archived logs (files ending with .[number].log.gz).
-        /// </summary>
-        public void DeleteArchived()
-        {
-            for (int i = 1; i <= MaxArchived; i++)
-            {
-                try
+                if (i == MaxArchived)
                 {
                     File.Delete($"{LogPath}.{i}.log.gz");
                 }
-                catch (FileNotFoundException) { }
+                else
+                {
+                    File.Move($"{LogPath}.{i}.log.gz", $"{LogPath}.{i + 1}.log.gz");
+                }
             }
+            catch (FileNotFoundException) { }
         }
 
-        private void LogFile(string msg, LogLevel level)
+        try
         {
-            if (msg is null)
+            // Set up file streams
+            using (FileStream original = File.OpenRead($"{LogPath}.log"))
+            using (FileStream compressed = File.Create($"{LogPath}.{1}.log.gz"))
+            using (GZipStream gzStream = new(compressed, CompressionLevel.Optimal))
             {
-                return;
+                // Compress the file
+                original.CopyTo(gzStream);
             }
 
-            if (LogWriter is null)
-            {
-                InitLogFile();
-            }
-
-            lock (LogWriter)
-            {
-                foreach (string str in msg.Split(NewLine, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    LogWriter.WriteLine(LogString(str, level, TimeToFile));
-                }
-            }
+            // Delete the unarchived copy of the log
+            File.Delete($"{LogPath}.log");
         }
-
-        private void LogConsole(string msg, LogLevel level)
+        catch (FileNotFoundException)
         {
-            if (msg is null)
-            {
-                return;
-            }
-
-            lock (conLock)
-            {
-                ConsoleColor
-                    bgColour = Console.BackgroundColor,
-                fgColour = Console.ForegroundColor;
-
-                switch (level)
-                {
-                    case LogLevel.FATAL:
-                        Console.BackgroundColor = ConsoleColor.Yellow;
-                        Console.ForegroundColor = ConsoleColor.DarkRed;
-                        break;
-                    case LogLevel.ERROR:
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        break;
-                    case LogLevel.WARN:
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        break;
-                    case LogLevel.INFO:
-                        Console.ForegroundColor = ConsoleColor.White;
-                        break;
-                    case LogLevel.DEBUG:
-                        Console.ForegroundColor = ConsoleColor.DarkGray;
-                        break;
-                }
-
-                foreach (string str in msg.Split(NewLine, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    Console.WriteLine(LogString(str, level, TimeToConsole));
-                }
-
-                Console.BackgroundColor = bgColour;
-                Console.ForegroundColor = fgColour;
-            }
+            // Log files probably don't exist yet,
+            // do nothing to avoid crash
         }
 
-        /// <summary>
-        /// Initialises the log file.
-        /// Call before any attempts to write a log file.
-        /// </summary>
-        private void InitLogFile()
+        LogWriter = new StreamWriter($"{LogPath}.log")
         {
-            // create log directory if it doesn't exist already
-            Directory.CreateDirectory(LogDir);
+            AutoFlush = true
+        };
+    }
 
-            // Rename old log files, and delete the oldest file if
-            // there's too many log files
-            for (int i = MaxArchived; i >= 0; i--)
-            {
-                try
-                {
-                    if (i == MaxArchived)
-                    {
-                        File.Delete($"{LogPath}.{i}.log.gz");
-                    }
-                    else
-                    {
-                        File.Move($"{LogPath}.{i}.log.gz", $"{LogPath}.{i + 1}.log.gz");
-                    }
-                }
-                catch (FileNotFoundException) { }
-            }
-
-            try
-            {
-                // Set up file streams
-                using (FileStream original = File.OpenRead($"{LogPath}.log"))
-                using (FileStream compressed = File.Create($"{LogPath}.{1}.log.gz"))
-                using (GZipStream gzStream = new(compressed, CompressionLevel.Optimal))
-                {
-                    // Compress the file
-                    original.CopyTo(gzStream);
-                }
-
-                // Delete the unarchived copy of the log
-                File.Delete($"{LogPath}.log");
-            }
-            catch (FileNotFoundException)
-            {
-                // Log files probably don't exist yet,
-                // do nothing to avoid crash
-            }
-
-            LogWriter = new StreamWriter($"{LogPath}.log")
-            {
-                AutoFlush = true
-            };
-        }
-
-        /// <summary>
-        /// Releases all resources used by this <see cref="Logger"/> instance.
-        /// </summary>
-        public void Dispose()
-        {
-            LogWriter.Dispose();
-        }
+    /// <summary>
+    /// Releases all resources used by this <see cref="Logger"/> instance.
+    /// </summary>
+    public void Dispose()
+    {
+        LogWriter.Dispose();
     }
 }

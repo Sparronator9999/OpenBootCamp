@@ -20,40 +20,37 @@ using System.IO;
 using System.ServiceProcess;
 using System.Windows.Forms;
 
-namespace OBC.Service
+namespace OBC.Service;
+
+internal static class Program
 {
-    internal static class Program
+    private static readonly Logger Log = new()
     {
-        private static readonly Logger Log = new()
-        {
-            ConsoleLevel = LogLevel.NONE,
-            FileLevel = LogLevel.DEBUG,
-            LogDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                "Sparronator9999", "OpenBootCamp", "Logs"),
-        };
+        LogDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            "Sparronator9999", "OpenBootCamp", "Logs"),
+    };
 
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
-        private static void Main()
+    /// <summary>
+    /// The main entry point for the application.
+    /// </summary>
+    private static void Main()
+    {
+        if (Environment.UserInteractive)
         {
-            if (Environment.UserInteractive)
-            {
-                MessageBox.Show(Strings.GetString("errDirectRun"), "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            else
-            {
-                AppDomain.CurrentDomain.UnhandledException +=
-                    new UnhandledExceptionEventHandler(LogUnhandledException);
-                Log.Info(Strings.GetString("svcVer", Environment.OSVersion));
-
-                ServiceBase.Run(new OBCService(Log));
-            }
+            MessageBox.Show(Strings.GetString("errDirectRun"), "Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+        else
+        {
+            AppDomain.CurrentDomain.UnhandledException +=
+                new UnhandledExceptionEventHandler(LogUnhandledException);
+            Log.Info(Strings.GetString("svcVer", Environment.OSVersion));
 
-        private static void LogUnhandledException(object sender, UnhandledExceptionEventArgs e) =>
-            Log.Fatal(Strings.GetString("svcException", e.ExceptionObject));
+            ServiceBase.Run(new OBCService(Log));
+        }
     }
+
+    private static void LogUnhandledException(object sender, UnhandledExceptionEventArgs e) =>
+        Log.Fatal(Strings.GetString("svcException", e.ExceptionObject));
 }

@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="errAcpiBright" xml:space="preserve">
+    <value>Failed to make an IOCTL_ACPI_BRIGHTNESS_AVAILABLE call to Keymagic!</value>
+  </data>
   <data name="errCDEject" xml:space="preserve">
     <value>ERROR: failed to eject optical drive!</value>
   </data>
@@ -134,11 +137,28 @@ Please run this service from 'services.msc'.</value>
 {2}</value>
   </data>
   <data name="errIoCtl" xml:space="preserve">
-    <value>DeviceIoControl failed with error {0}:
-{1}</value>
+    <value>DeviceIoControl failed: {0}</value>
+  </data>
+  <data name="errNoKA" xml:space="preserve">
+    <value>Failed to connect to KeyAgent.sys!
+Some special Fn keys will not work!</value>
+  </data>
+  <data name="errNoKM" xml:space="preserve">
+    <value>Failed to connect to Keymagic.sys!
+OBC's keyboard-related functionality will not work!</value>
+  </data>
+  <data name="errNoMHD" xml:space="preserve">
+    <value>Failed to connect to MacHALDriver.sys!
+SMC functions (including keyboard backlight adjustment) will be unavailable!</value>
   </data>
   <data name="kbdBrightSet" xml:space="preserve">
     <value>Setting keyboard backlight to {0}...</value>
+  </data>
+  <data name="svcConfLoaded" xml:space="preserve">
+    <value>Loaded the OpenBootCamp config successfully!</value>
+  </data>
+  <data name="svcConfLoading" xml:space="preserve">
+    <value>Loading config (obc.xml)...</value>
   </data>
   <data name="svcDesc" xml:space="preserve">
     <value>This service provides core functionality of OpenBootCamp (OBC), including handling of Apple keyboard special Function (Fn) keys. If this service's Startup Type is set to Manual or Disabled, most of OBC's apps and features will not work.
@@ -152,6 +172,18 @@ The service will now stop.</value>
   <data name="svcKELException" xml:space="preserve">
     <value>Unhandled exception occurred in Keyboard Event Listener: {0}</value>
   </data>
+  <data name="svcStarted" xml:space="preserve">
+    <value>Started the OpenBootCamp service.</value>
+  </data>
+  <data name="svcStarting" xml:space="preserve">
+    <value>Starting the OpenBootCamp service...</value>
+  </data>
+  <data name="svcStopped" xml:space="preserve">
+    <value>The OpenBootCamp service has stopped successfully.</value>
+  </data>
+  <data name="svcStopping" xml:space="preserve">
+    <value>Stopping the OpenBootCamp service...</value>
+  </data>
   <data name="svcVer" xml:space="preserve">
     <value>~~~~~ OpenBootCamp Service ~~~~~
 Copyright © 2024 Sparronator9999
@@ -159,5 +191,17 @@ OS version: {0}</value>
   </data>
   <data name="warnBadEvent" xml:space="preserve">
     <value>Unhandled event (ID: {0}) was signalled.</value>
+  </data>
+  <data name="wrnBadConf" xml:space="preserve">
+    <value>Invalid OpenBootCamp config!
+The default settings will be used.</value>
+  </data>
+  <data name="wrnNoConf" xml:space="preserve">
+    <value>OpenBootCamp config not found!
+The default settings will be used.</value>
+  </data>
+  <data name="wrnNoKeyLight" xml:space="preserve">
+    <value>SMC reports that keyboard backlight adjustment is not supported. 
+Keyboard backlight adjustments will be unavailable!</value>
   </data>
 </root>
