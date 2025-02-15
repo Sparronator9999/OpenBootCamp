@@ -43,11 +43,11 @@ internal class FanController : IDisposable
             throw new InvalidOperationException("The fan controller is already running.");
         }
 
-        WorkerLog("Getting fan count...");
+        Log.Info("Getting fan information...", nameof(FanController));
         int fanCount = GetFanCount();
         if (fanCount == -1)
         {
-            WorkerLog("ERROR: failed to get fan count!");
+            Log.Error("Failed to get fan count!", nameof(FanController));
             return;
         }
 
@@ -58,7 +58,6 @@ internal class FanController : IDisposable
             Config.FanConfs.Add(new FanConf());
         }
 
-        WorkerLog("Getting fan information...");
         Fans = new Fan[fanCount];
         short ctrlBits = 0;
         for (int i = 0; i < fanCount; i++)
@@ -71,32 +70,33 @@ internal class FanController : IDisposable
             };
             if (Fans[i].MinSpeed < 0 || Fans[i].MaxSpeed < 0)
             {
-                WorkerLog($"ERROR: failed to get min/max speed for fan #{i} ({Fans[i].Name})!");
+                Log.Error($"Failed to get min/max speed for fan #{i} ({Fans[i].Name})!", nameof(FanController));
                 return;
             }
-            WorkerLog($"Found fan #{i} (name = {Fans[i].Name}, minSpeed = {Fans[i].MinSpeed}, maxSpeed = {Fans[i].MaxSpeed})");
+            Log.Debug($"Found fan #{i} (name = {Fans[i].Name}, minSpeed = {Fans[i].MinSpeed}, maxSpeed = {Fans[i].MaxSpeed})", nameof(FanController));
             FanConf cfg = Config.FanConfs[i];
             if (cfg.Enabled)
             {
                 ctrlBits |= (short)(1 << i);
                 if (string.IsNullOrEmpty(cfg.SensorKey) || cfg.SensorKey.Length != 4)
                 {
-                    WorkerLog($"ERROR (fan #{i}): SMC key of associated temp. sensor is invalid/missing!");
+                    Log.Warn($"Fan #{i}'s associated SMC sensor key is invalid/missing!", nameof(FanController));
                     cfg.Enabled = false;
                 }
                 if (cfg.Tmax <= cfg.Tmin)
                 {
-                    WorkerLog($"ERROR (fan #{i}): Tmax <= Tmin!");
+                    Log.Warn($"Fan #{i}'s Tmax <= Tmin!", nameof(FanController));
                     cfg.Enabled = false;
                 }
             }
-            else
+
+            if (!cfg.Enabled)
             {
-                WorkerLog($"WARN: fan #{i} is disabled in config!");
+                Log.Warn($"Fan #{i} is disabled in config!", nameof(FanController));
             }
         }
 
-        Log.Debug("Starting fan control poll thread...");
+        Log.Info("Starting fan control thread...", nameof(FanController));
         PollTimer = new(Config.PollRate);
         PollTimer.Elapsed += PollFans;
 
@@ -109,11 +109,11 @@ internal class FanController : IDisposable
     {
         if (PollTimer is null)
         {
-            throw new InvalidOperationException("The fan controller is not running.");
+            return;
         }
 
         // stop the fan control thread
-        Log.Debug("Stopping fan control module...");
+        Log.Info("Stopping fan control module...", nameof(FanController));
         ResetFanCtrl();
         PollTimer.Stop();
 
@@ -178,33 +178,27 @@ internal class FanController : IDisposable
                     tRpm = (int)((tAdj * dS / dT + fan.MinSpeed) / 100 + 0.5) * 100;
                 }
 
-                WorkerLog($"Fan #{i}: curSpd {GetCurFanSpeed(i)}, target {tRpm}, temp {GetTemp(cfg.SensorKey)} °C");
                 if (fan.TargetSpeed != tRpm)
                 {
                     if (SetFanSpeed(i, tRpm))
                     {
-                        WorkerLog($"changed fan speed from {fan.TargetSpeed} to {tRpm}");
+                        Log.Debug($"changed fan #{i}'s speed from {fan.TargetSpeed} to {tRpm}", nameof(FanController));
                         fan.TargetSpeed = tRpm;
                     }
                     else
                     {
-                        WorkerLog($"FAILED to change fan speed to {tRpm}!\n" +
-                            $"{Utils.GetWin32ErrMsg(SMC.ErrorCode)}");
+                        Log.Error($"Failed to change fan #{i}'s speed to {tRpm}!\n" +
+                            $"{Utils.GetWin32ErrMsg(SMC.ErrorCode)}", nameof(FanController));
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            Log.Error($"Unhandled exception occurred in FanController background thread:\n{ex}");
+            Log.Error($"Unhandled exception occurred in FanController background thread:\n{ex}", nameof(FanController));
             ResetFanCtrl();
             PollTimer.Stop();
         }
-    }
-
-    private void WorkerLog(string message)
-    {
-        Log.Debug($"[FanController] {message}");
     }
 
     private int GetFanCount()

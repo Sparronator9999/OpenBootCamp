@@ -77,9 +77,12 @@ internal sealed class Logger : IDisposable
     /// <param name="msg">
     /// The message to write to the log.
     /// </param>
-    public void Debug(string msg)
+    /// <param name="module">
+    /// The module that generated the message. May be <see langword="null"/>.
+    /// </param>
+    public void Debug(string msg, string module = null)
     {
-        LogFile(msg, LogLevel.DEBUG);
+        LogFile(msg, module, LogLevel.DEBUG);
     }
 
     /// <summary>
@@ -88,9 +91,12 @@ internal sealed class Logger : IDisposable
     /// <param name="msg">
     /// The message to write to the log.
     /// </param>
-    public void Info(string msg)
+    /// <param name="module">
+    /// The module that generated the message. May be <see langword="null"/>.
+    /// </param>
+    public void Info(string msg, string module = null)
     {
-        LogFile(msg, LogLevel.INFO);
+        LogFile(msg, module, LogLevel.INFO);
     }
 
     /// <summary>
@@ -99,9 +105,12 @@ internal sealed class Logger : IDisposable
     /// <param name="msg">
     /// The message to write to the log.
     /// </param>
-    public void Warn(string msg)
+    /// <param name="module">
+    /// The module that generated the message. May be <see langword="null"/>.
+    /// </param>
+    public void Warn(string msg, string module = null)
     {
-        LogFile(msg, LogLevel.WARN);
+        LogFile(msg, module, LogLevel.WARN);
     }
 
     /// <summary>
@@ -110,9 +119,12 @@ internal sealed class Logger : IDisposable
     /// <param name="msg">
     /// The message to write to the log.
     /// </param>
-    public void Error(string msg)
+    /// <param name="module">
+    /// The module that generated the message. May be <see langword="null"/>.
+    /// </param>
+    public void Error(string msg, string module = null)
     {
-        LogFile(msg, LogLevel.ERROR);
+        LogFile(msg, module, LogLevel.ERROR);
     }
 
     /// <summary>
@@ -122,27 +134,15 @@ internal sealed class Logger : IDisposable
     /// <param name="msg">
     /// The message to write to the log.
     /// </param>
-    public void Fatal(string msg)
+    /// <param name="module">
+    /// The module that generated the message. May be <see langword="null"/>.
+    /// </param>
+    public void Fatal(string msg, string module = null)
     {
-        LogFile(msg, LogLevel.FATAL);
+        LogFile(msg, module, LogLevel.FATAL);
     }
 
-    /// <summary>
-    /// Deletes all archived logs (files ending with .[number].log.gz).
-    /// </summary>
-    public void DeleteArchived()
-    {
-        for (int i = 1; i <= MaxArchived; i++)
-        {
-            try
-            {
-                File.Delete($"{LogPath}.{i}.log.gz");
-            }
-            catch (FileNotFoundException) { }
-        }
-    }
-
-    private void LogFile(string msg, LogLevel level)
+    private void LogFile(string msg, string module, LogLevel level)
     {
         if (msg is null)
         {
@@ -158,7 +158,7 @@ internal sealed class Logger : IDisposable
         {
             foreach (string str in msg.Split(NewLine, StringSplitOptions.RemoveEmptyEntries))
             {
-                LogWriter.WriteLine($"[{DateTime.Now:dd/MM/yyyy HH:mm:ss.fff}] {$"[{level}]",-8} {str}");
+                LogWriter.WriteLine($"[{DateTime.Now:dd/MM/yyyy HH:mm:ss.fff}] {$"[{level}]",-8}{(module is null ? "" : $"[{module}] ")}{str}");
             }
         }
     }

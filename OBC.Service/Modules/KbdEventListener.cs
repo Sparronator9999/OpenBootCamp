@@ -24,7 +24,6 @@ using System.IO.Pipes;
 using System.Management;
 using System.Security.AccessControl;
 using System.Threading;
-using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
 
 namespace OBC.Service.Modules;
@@ -73,9 +72,9 @@ internal sealed class KbdEventListener : IDisposable
 
     private readonly EventWaitHandle[] Events = new AutoResetEvent[EVENT_COUNT + 1];
 
-    private Task ListenerTask;
+    private Thread ListenerTask;
 
-    private bool CleanupComplete;
+    private bool Disposed;
 
     private byte DispBright;
 
@@ -112,41 +111,43 @@ internal sealed class KbdEventListener : IDisposable
 
     public void Start()
     {
-        if (CleanupComplete)
+        ThrowIfDisposed();
+
+        if (ListenerTask is not null)
         {
-            return;
+            throw new InvalidOperationException(
+                "The keyboard event listener is already running.");
         }
 
-        CleanupComplete = false;
         if (KeyMagic.Open())
         {
-            Log.Info("Setting OSXFnBehavior from config file (obc.xml)...");
+            Log.Info("Setting OSXFnBehavior from config file (obc.xml)...", nameof(KbdEventListener));
 
             int value = Config.OSXFnBehaviour ? 1 : 0;
 
             if (!KeyMagic.IOControl(AppleKbdIoCtl.SetOSXFnBehaviour, ref value))
             {
-                Log.Error("Failed to set OSXFnBehavior!");
+                Log.Error("Failed to set OSXFnBehavior!", nameof(KbdEventListener));
                 Log.Error(Strings.GetString("errIoCtl",
-                    Utils.GetWin32ErrMsg(KeyMagic.ErrorCode)));
+                    Utils.GetWin32ErrMsg(KeyMagic.ErrorCode)), nameof(KbdEventListener));
             }
 
             value = Config.SystemDispBright ? 1 : 0;
             if (!KeyMagic.IOControl(AppleKbdIoCtl.AcpiBrightnessAvailable, ref value))
             {
-                Log.Error(Strings.GetString("errAcpiBright"));
+                Log.Error(Strings.GetString("errAcpiBright"), nameof(KbdEventListener));
                 Log.Error(Strings.GetString("errIoCtl",
-                    Utils.GetWin32ErrMsg(KeyMagic.ErrorCode)));
+                    Utils.GetWin32ErrMsg(KeyMagic.ErrorCode)), nameof(KbdEventListener));
             }
         }
         else
         {
-            Log.Error(Strings.GetString("errNoKM"));
+            Log.Error(Strings.GetString("errNoKM"), nameof(KbdEventListener));
         }
 
         if (KeyAgent.Open())
         {
-            Log.Debug("Initalising events...");
+            Log.Debug("Initalising events...", nameof(KbdEventListener));
             for (int i = 0; i < Events.Length; i++)
             {
                 Events[i] = new AutoResetEvent(false);
@@ -160,41 +161,41 @@ internal sealed class KbdEventListener : IDisposable
                 {
                     if (!KeyAgent.IOControl(KbdEventIOCtls[i], Events[i].SafeWaitHandle.DangerousGetHandle(), 0))
                     {
-                        Log.Error(Strings.GetString("errEventInit"));
+                        Log.Error(Strings.GetString("errEventInit"), nameof(KbdEventListener));
                     }
                 }
                 else
                 {
-                    Log.Error(Strings.GetString("errEventHandle"));
+                    Log.Error(Strings.GetString("errEventHandle"), nameof(KbdEventListener));
                 }
             }
 
-            Log.Debug("Starting event IPC server...");
+            Log.Debug("Starting event IPC server...", nameof(KbdEventListener));
             IPCServer.Start();
 
-            ListenerTask = new Task(HandleEvents, CancellationToken.None, TaskCreationOptions.LongRunning);
+            ThreadStart ts = new(HandleEvents);
+            ListenerTask = new Thread(ts);
             ListenerTask.Start();
         }
         else
         {
-            Log.Warn(Strings.GetString("errNoKA"));
+            Log.Warn(Strings.GetString("errNoKA"), nameof(KbdEventListener));
         }
     }
 
     public void Stop()
     {
+        ThrowIfDisposed();
         IdleTimer.Stop();
 
         // signal the "stop listener" event
         Events[EVENT_COUNT].Set();
 
         // wait for the event listener to stop
-        ListenerTask.Wait();
+        ListenerTask.Join();
+        IPCServer.Stop();
 
-        if (SMC is not null)
-        {
-            SetKbdBrightness(0);
-        }
+        SetKbdBrightness(0);
 
         // perform cleanup (disposal of events, etc.)
         Cleanup();
@@ -202,11 +203,14 @@ internal sealed class KbdEventListener : IDisposable
 
     public void Sleep()
     {
+        ThrowIfDisposed();
         SetKbdBrightness(0);
     }
 
     public void Wake()
     {
+        ThrowIfDisposed();
+
         // turn on keyboard backlight if timeout is disabled.
         // if timeout is enabled, backlight will be turned on
         // by keyboard activity.
@@ -250,7 +254,7 @@ internal sealed class KbdEventListener : IDisposable
             SetKbdBrightness(Config.KeyLightBright);
         }
 
-        WorkerLog("Started listening for events.");
+        Log.Info("Started listening for events.", nameof(KbdEventListener));
         while (true)
         {
             int eventID = WaitHandle.WaitAny(Events);
@@ -260,7 +264,7 @@ internal sealed class KbdEventListener : IDisposable
                     IPCServer?.PushMessage(new ObcEvent(ObcEventType.Eject));
                     if (!EjectOpticalDrive())
                     {
-                        WorkerLog(Strings.GetString("errCDEject"));
+                        Log.Error(Strings.GetString("errCDEject"), nameof(KbdEventListener));
                     }
                     break;
                 case 3:     // display brightness up
@@ -326,12 +330,12 @@ internal sealed class KbdEventListener : IDisposable
                     }
                     break;
                 case EVENT_COUNT:   // shut down listener - signalled by Stop()
-                    WorkerLog("Stopping event listener...");
+                    Log.Info("Stopping event listener...", nameof(KbdEventListener));
                     return;
                 case WaitHandle.WaitTimeout:
                     break;
                 default:
-                    WorkerLog(Strings.GetString("warnBadEvent"));
+                    Log.Warn(Strings.GetString("warnBadEvent"), nameof(KbdEventListener));
                     break;
             }
         }
@@ -339,7 +343,7 @@ internal sealed class KbdEventListener : IDisposable
 
     private void Cleanup()
     {
-        if (CleanupComplete)
+        if (Disposed)
         {
             return;
         }
@@ -360,12 +364,6 @@ internal sealed class KbdEventListener : IDisposable
         }
         KeyAgent?.Close();
         KeyMagic?.Close();
-        CleanupComplete = true;
-    }
-
-    private void WorkerLog(string message)
-    {
-        Log.Debug($"[KbdEventListener] {message}");
     }
 
     // TODO: run async since it hangs the entire event listener
@@ -487,7 +485,19 @@ internal sealed class KbdEventListener : IDisposable
 
     public void Dispose()
     {
-        Cleanup();
-        GC.SuppressFinalize(this);
+        if (!Disposed)
+        {
+            Cleanup();
+            Disposed = true;
+            GC.SuppressFinalize(this);
+        }
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (Disposed)
+        {
+            throw new ObjectDisposedException(nameof(KbdEventListener));
+        }
     }
 }

@@ -12,6 +12,8 @@ internal class SMC : IDisposable
 {
     private readonly Driver HAL;
 
+    public bool IsOpen => HAL.IsOpen;
+
     public int ErrorCode => HAL.ErrorCode;
 
     public SMC(string name)

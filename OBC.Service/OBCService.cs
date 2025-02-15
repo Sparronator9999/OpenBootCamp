@@ -100,7 +100,7 @@ internal sealed class OBCService : ServiceBase
             Listener.Start();
         }
 
-        if (Config.FanControl.Enabled && SMC is not null)
+        if (Config.FanControl.Enabled && SMC.IsOpen)
         {
             FanController = new(Config.FanControl, Log, SMC);
             FanController.Start();
@@ -132,10 +132,6 @@ internal sealed class OBCService : ServiceBase
         Log.Info(Strings.GetString("svcStopped"));
     }
 
-    //protected override void OnPause() { }
-
-    //protected override void OnContinue() { }
-
     protected override bool OnPowerEvent(PowerBroadcastStatus powerStatus)
     {
         switch (powerStatus)
@@ -158,21 +154,17 @@ internal sealed class OBCService : ServiceBase
     {
         Log.Info(Strings.GetString("svcConfLoading"));
 
-        if (File.Exists(ConfPath))
+        try
         {
-            try
-            {
-                Config = ObcConfig.Load(ConfPath);
-            }
-            catch (InvalidConfigException)
-            {
-                Log.Warn(Strings.GetString("wrnBadConf"));
-                Config = new ObcConfig();
-            }
-
+            Config = ObcConfig.Load(ConfPath);
             Log.Info(Strings.GetString("svcConfLoaded"));
         }
-        else
+        catch (InvalidConfigException)
+        {
+            Log.Warn(Strings.GetString("wrnBadConf"));
+            Config = new ObcConfig();
+        }
+        catch (FileNotFoundException)
         {
             Log.Warn(Strings.GetString("wrnNoConf"));
             Config = new ObcConfig();
