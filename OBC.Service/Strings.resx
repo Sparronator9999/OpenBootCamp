@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -127,7 +127,7 @@
     <value>This is a service;
 it is not intended to be run directly (by double-clicking).
 
-Please run this service from 'services.msc'.</value>
+Please run this service from 'InstallMgr' (should be in the same folder as this service) or 'services.msc'.</value>
   </data>
   <data name="errEventHandle" xml:space="preserve">
     <value>Failed to get event handle for event {0}.</value>
