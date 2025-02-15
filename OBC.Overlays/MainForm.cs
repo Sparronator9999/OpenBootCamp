@@ -45,6 +45,13 @@ public partial class MainForm : Form
 
     private readonly Timer FadeTimer = new();
 
+    private readonly NotifyIcon TrayIcon = new()
+    {
+        Icon = Utils.GetEntryAssemblyIcon(),
+        BalloonTipTitle = "OpenBootCamp",
+        BalloonTipText = "Overlay service has started.",
+    };
+
     protected override CreateParams CreateParams
     {
         get
@@ -56,7 +63,7 @@ public partial class MainForm : Form
         }
     }
 
-    public MainForm()
+    public MainForm(bool autoStart = false)
     {
         ClientSize = new Size(192, 192);
         DoubleBuffered = true;
@@ -71,11 +78,24 @@ public partial class MainForm : Form
         AutoScaleMode = AutoScaleMode.Dpi;
         DpiScale = AutoScaleDimensions.Width / 96F;
 
+        if (!autoStart)
+        {
+            TrayIcon.BalloonTipClicked += HideTrayIcon;
+            TrayIcon.BalloonTipClosed += HideTrayIcon;
+            TrayIcon.Visible = true;
+            TrayIcon.ShowBalloonTip(3000);
+        }
+
         FadeTimer.Tick += FadeTimerTick;
 
         IPCClient.Error += IPCError;
         IPCClient.ServerMessage += IPCMessage;
         IPCClient.Start();
+    }
+
+    private void HideTrayIcon(object sender, EventArgs e)
+    {
+        TrayIcon.Visible = false;
     }
 
     protected override void WndProc(ref Message m)
@@ -131,6 +151,7 @@ public partial class MainForm : Form
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
         User32.UnregisterLidEvents();
+        TrayIcon.Visible = false;
         base.OnFormClosing(e);
     }
 

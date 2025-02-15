@@ -210,7 +210,7 @@ public partial class MainForm : Form
 
         if (btnOBCOInstall.Text == "Install")
         {
-            key.SetValue("ObcOverlay", $"\"{Assembly.GetEntryAssembly().Location}\"");
+            key.SetValue("ObcOverlay", $"\"{Assembly.GetEntryAssembly().Location}\" --startup");
             btnOBCOInstall.Text = "Uninstall";
         }
         else if (btnOBCOInstall.Text == "Uninstall")

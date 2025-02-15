@@ -28,7 +28,7 @@ internal static class Program
     /// The main entry point for the application.
     /// </summary>
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
         // multi-instance detection
         // NOTE: GUID is used to prevent conflicts with potential
@@ -41,7 +41,7 @@ internal static class Program
             {
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new MainForm());
+                Application.Run(new MainForm(args.Length > 0 && args[0] == "--startup"));
                 return;
             }
 
@@ -57,13 +57,9 @@ internal static class Program
 
                 if (Utils.ShowWarning(
                     $"The OBC overlay service is already running! (PID: {p.Id})\n" +
-                    $"Would you like to close it?", "Already running") == DialogResult.Yes)
+                    $"Would you like to kill it?", "Already running") == DialogResult.Yes)
                 {
-                    p.CloseMainWindow();
-                    if (!p.WaitForExit(3000))
-                    {
-                        p.Kill();
-                    }
+                    p.Kill();
                 }
                 break;
             }
