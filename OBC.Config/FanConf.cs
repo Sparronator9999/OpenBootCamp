@@ -24,17 +24,17 @@ public sealed class FanConf
     /// The SMC key for the sensor that controls this fan's speed.
     /// </summary>
     [XmlElement]
-    public string SensorKey { get; set; }
+    public string SensorKey { get; set; } = string.Empty;
 
     /// <summary>
     /// The sensor temperature that sets this fan's minimum speed.
     /// </summary>
     [XmlElement]
-    public float MinTemp { get; set; }
+    public float Tmin { get; set; }
 
     /// <summary>
     /// The sensor temperature that sets this fan's maximum speed.
     /// </summary>
     [XmlElement]
-    public float MaxTemp { get; set; }
+    public float Tmax { get; set; }
 }

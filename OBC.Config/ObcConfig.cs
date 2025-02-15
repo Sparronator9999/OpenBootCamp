@@ -15,7 +15,6 @@
 // OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -37,6 +36,24 @@ public sealed class ObcConfig
     private const int ExpectedVer = 1;
 
     /// <summary>
+    /// Set to <see langword="true"/> to log the computer's supported SMC keys
+    /// on service startup. The default is <see langword="false"/>.
+    /// </summary>
+    [XmlElement]
+    public bool LogSMCKeys { get; set; }
+
+    /// <summary>
+    /// If <see cref="LogSMCKeys"/> is set to <see langword="true"/>,
+    /// also logs the initial value of all readable SMC keys if set to
+    /// <see langword="true"/>. The default is <see langword="false"/>
+    /// </summary>
+    /// <remarks>
+    /// This option may increase the service startup time when enabled.
+    /// </remarks>
+    [XmlElement]
+    public bool LogSMCKeyData { get; set; }
+
+    /// <summary>
     /// Configuration settings for the OBC Service's Keyboard Event Listener module.
     /// </summary>
     /// <remarks>
@@ -54,15 +71,7 @@ public sealed class ObcConfig
     /// </remarks>
     [XmlElement]
     public FanControlConf FanControl { get; set; }
-
-    /// <summary>
-    /// An array of fan configurations for the computer.
-    /// </summary>
-    /// <remarks>
-    /// There should be one <see cref="FanConf"/> for each fan in the computer.
-    /// </remarks>
-    [XmlArray]
-    public List<FanConf> FanConfs { get; set; }
+        = new FanControlConf();
 
     /// <summary>
     /// Parses an OpenBootCamp config XML and returns an

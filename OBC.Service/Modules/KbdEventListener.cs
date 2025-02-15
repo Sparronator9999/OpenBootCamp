@@ -17,7 +17,6 @@
 using OBC.Common;
 using OBC.Config;
 using OBC.IPC;
-using OBC.Service.Hardware;
 using OBC.Service.Logs;
 using System;
 using System.IO;
@@ -28,7 +27,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
 
-namespace OBC.Service;
+namespace OBC.Service.Modules;
 
 internal sealed class KbdEventListener : IDisposable
 {
@@ -182,7 +181,7 @@ internal sealed class KbdEventListener : IDisposable
         }
     }
 
-    public void Stop(bool turnOffKeyLight = true)
+    public void Stop()
     {
         IdleTimer.Stop();
 
@@ -192,7 +191,7 @@ internal sealed class KbdEventListener : IDisposable
         // wait for the event listener to stop
         ListenerTask.Wait();
 
-        if (turnOffKeyLight && SMC is not null)
+        if (SMC is not null)
         {
             SetKbdBrightness(0);
         }
@@ -201,12 +200,12 @@ internal sealed class KbdEventListener : IDisposable
         Cleanup();
     }
 
-    public void OnSleep()
+    public void Sleep()
     {
         SetKbdBrightness(0);
     }
 
-    public void OnWake()
+    public void Wake()
     {
         // turn on keyboard backlight if timeout is disabled.
         // if timeout is enabled, backlight will be turned on
@@ -366,7 +365,7 @@ internal sealed class KbdEventListener : IDisposable
 
     private void WorkerLog(string message)
     {
-        Log.Debug($"[Event Listener] {message}");
+        Log.Debug($"[KbdEventListener] {message}");
     }
 
     // TODO: run async since it hangs the entire event listener
@@ -471,7 +470,7 @@ internal sealed class KbdEventListener : IDisposable
         }
 
         Console.WriteLine(Strings.GetString("kbdBrightSet", brightness));
-        bool success = SMC.WriteData("LKSB", brightness, 0);
+        bool success = SMC.WriteRawData("LKSB", brightness, 0);
 
         if (!success)
         {

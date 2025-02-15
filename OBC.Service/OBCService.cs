@@ -14,12 +14,14 @@
 // You should have received a copy of the GNU General Public License along with
 // OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
 
+using OBC.Common;
 using OBC.Config;
-using OBC.Service.Hardware;
 using OBC.Service.Logs;
+using OBC.Service.Modules;
 using System;
 using System.IO;
 using System.ServiceProcess;
+using System.Text;
 
 namespace OBC.Service;
 
@@ -30,6 +32,7 @@ internal sealed class OBCService : ServiceBase
     private readonly SMC SMC = new("MacHALDriver");
 
     private KbdEventListener Listener;
+    private FanController FanController;
 
     private ObcConfig Config;
     private readonly string ConfPath = Path.Combine(
@@ -54,7 +57,7 @@ internal sealed class OBCService : ServiceBase
         {
             Log.Warn(Strings.GetString("errNoMHD"));
         }
-        /*else
+        else
         {
             SMCKeyInfo[] keys = SMC.GetSupportedKeys();
             if (keys is null || keys.Length == 0)
@@ -63,7 +66,7 @@ internal sealed class OBCService : ServiceBase
                     "Failed to get supported SMC keys:\n" +
                     $"{Utils.GetWin32ErrMsg(SMC.ErrorCode)}");
             }
-            else
+            else if (Config.LogSMCKeys)
             {
                 Log.Debug("Supported SMC keys:");
                 for (int i = 0; i < keys.Length; i++)
@@ -71,10 +74,25 @@ internal sealed class OBCService : ServiceBase
                     StringBuilder sb = new($"{i:X4}");
 
                     sb.Append($": {keys[i].Key}, len = 0x{keys[i].Length:X2}, type = {keys[i].TypeString}, attr = {keys[i].Attributes}");
+                    if (Config.LogSMCKeyData && (keys[i].Attributes & SMCKeyAttributes.Read) == SMCKeyAttributes.Read)
+                    {
+                        sb.Append($", data = ");
+                        if (SMC.ReadRawData(keys[i].Key, keys[i].Length, out byte[] data))
+                        {
+                            for (int j = 0; j < data.Length; j++)
+                            {
+                                sb.Append($"{data[j]:X2} ");
+                            }
+                        }
+                        else
+                        {
+                            sb.Append("null");
+                        }
+                    }
                     Log.Debug(sb.ToString());
                 }
             }
-        }*/
+        }
 
         if (Config.KbdEventListener.Enabled)
         {
@@ -82,10 +100,12 @@ internal sealed class OBCService : ServiceBase
             Listener.Start();
         }
 
-        if (Config.FanControl.Enabled)
+        if (Config.FanControl.Enabled && SMC is not null)
         {
-            Log.Warn("Fan control module is enabled, but hasn't been implemented yet!");
+            FanController = new(Config.FanControl, Log, SMC);
+            FanController.Start();
         }
+        Log.Info(Strings.GetString("svcStarted"));
     }
 
     protected override void OnStop()
@@ -102,6 +122,7 @@ internal sealed class OBCService : ServiceBase
     {
         Log.Info(Strings.GetString("svcStopping"));
         Listener?.Stop();
+        FanController?.Stop();
 
         Log.Info("Saving config...");
         Config.Save(ConfPath);
@@ -122,10 +143,12 @@ internal sealed class OBCService : ServiceBase
             case PowerBroadcastStatus.ResumeCritical:
             case PowerBroadcastStatus.ResumeSuspend:
             case PowerBroadcastStatus.ResumeAutomatic:
-                Listener?.OnWake();
+                Listener?.Wake();
+                FanController?.Wake();
                 break;
             case PowerBroadcastStatus.Suspend:
-                Listener?.OnSleep();
+                Listener?.Sleep();
+                FanController?.Sleep();
                 break;
         }
         return true;
