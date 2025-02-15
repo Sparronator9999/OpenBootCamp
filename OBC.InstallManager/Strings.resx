@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -139,5 +139,48 @@ Make sure it exists in the same directory as this program.</value>
   <data name="svcUninstallFail" xml:space="preserve">
     <value>Failed to uninstall the OpenBootCamp service!
 Make sure it exists in the same directory as this program.</value>
+  </data>
+  <data name="ttKA" xml:space="preserve">
+    <value>Required (along with Apple's keyboard drivers) for handling
+special Fn key events.
+
+If not using OBC's keyboard event handler or Apple's official Boot
+Camp Manager, this may be left uninstalled.</value>
+  </data>
+  <data name="ttMHD" xml:space="preserve">
+    <value>Required for SMC-related operations, including changing
+keyboard backlight brightness and controlling system fans.
+
+If not using any of these, this driver can be left uninstalled.
+
+Requires a reboot to (un)install.</value>
+  </data>
+  <data name="ttOBCS" xml:space="preserve">
+    <value>The core OpenBootCamp service.
+
+This service is responsible for the vast majority of OBC's features,
+including keyboard event handling and fan control and is required
+for OBC Overlays to work.</value>
+  </data>
+  <data name="ttOBCO" xml:space="preserve">
+    <value>Used to display overlays when the OBC service handles special Fn keys.
+
+This includes keyboard backlight brightness changes, eject button
+presses, display brightness changes (if `SystemDispBright` is disabled
+in config), and volume changes (if on older Windows versions).</value>
+  </data>
+  <data name="dlgAbout" xml:space="preserve">
+    <value>OpenBootCamp (OBC)
+An open-source replacement for (some of) Apple's Boot Camp services and more, written in C#.
+
+Copyright © Sparronator9999, 2024-2025.
+OBC and its authors are not affiliated with Apple Inc. in any way.
+Made in Australia with 100% Australian contributions.
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program. If not, visit &lt;https://www.gnu.org/licenses/gpl-3.0.html&gt; for a copy.</value>
   </data>
 </root>

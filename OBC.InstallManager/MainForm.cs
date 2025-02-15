@@ -17,6 +17,7 @@
 using Microsoft.Win32;
 using OBC.Common;
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -40,6 +41,16 @@ public partial class MainForm : Form
     {
         InitializeComponent();
         Icon = Utils.GetEntryAssemblyIcon();
+
+        ToolTip tt = new();
+        tt.SetToolTip(lblOBCS, Strings.GetString("ttOBCS"));
+        tt.SetToolTip(lblOBCSState, Strings.GetString("ttOBCS"));
+        tt.SetToolTip(lblOBCO, Strings.GetString("ttOBCO"));
+        tt.SetToolTip(lblOBCOState, Strings.GetString("ttOBCO"));
+        tt.SetToolTip(lblKA, Strings.GetString("ttKA"));
+        tt.SetToolTip(lblKAState, Strings.GetString("ttKA"));
+        tt.SetToolTip(lblMHD, Strings.GetString("ttMHD"));
+        tt.SetToolTip(lblMHDState, Strings.GetString("ttMHD"));
 
         SetStatusLabel("obcsvc", false, lblOBCSState, btnOBCSInstall, btnOBCSStart);
         SetStatusLabel("KeyAgent", true, lblKAState, btnKAInstall);
@@ -330,4 +341,15 @@ public partial class MainForm : Form
     [DllImport("Kernel32", ExactSpelling = true, SetLastError = true,
         CharSet = CharSet.Unicode)]
     private static extern bool MoveFileExW(string src, string dest, int flags);
+
+    private void tsiAbout_Click(object sender, EventArgs e)
+    {
+        // TODO: port YAMDCC's About dialog here
+        Utils.ShowInfo(Strings.GetString("dlgAbout"), "About");
+    }
+
+    private void tsiSource_Click(object sender, EventArgs e)
+    {
+        Process.Start("https://github.com/Sparronator9999/OpenBootCamp");
+    }
 }
