@@ -14,7 +14,11 @@
 // You should have received a copy of the GNU General Public License along with
 // OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
 
+using OBC.Common;
 using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace OBC.InstallManager;
@@ -27,8 +31,44 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
-        Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
-        Application.Run(new MainForm());
+        // multi-instance detection
+        // NOTE: GUID is used to prevent conflicts with potential
+        // identically named but different program
+        // based on: https://stackoverflow.com/a/184143
+        using (Mutex mutex = new(true, "{3e5ac57e-5404-4f5e-9842-271d16a94fa8}", out bool createdNew))
+        {
+            // this instance is the first to open; proceed as normal:
+            if (createdNew)
+            {
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new MainForm());
+                return;
+            }
+
+            // InstallMgr is already running, focus
+            // (and restore, if minimised) its window:
+            Process current = Process.GetCurrentProcess();
+            foreach (Process p in Process.GetProcessesByName(current.ProcessName))
+            {
+                if (p.Id == current.Id)
+                {
+                    continue;
+                }
+
+                if (p.MainWindowHandle != IntPtr.Zero)
+                {
+                    ShowWindow(p.MainWindowHandle, 9);  // SW_RESTORE
+                    SetForegroundWindow(p.MainWindowHandle);
+                }
+                break;
+            }
+        }
     }
+
+    [DllImport("User32")]
+    internal static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("User32")]
+    internal static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 }

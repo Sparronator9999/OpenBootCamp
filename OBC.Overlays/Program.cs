@@ -14,7 +14,10 @@
 // You should have received a copy of the GNU General Public License along with
 // OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
 
+using OBC.Common;
 using System;
+using System.Diagnostics;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace OBC.Overlays;
@@ -27,8 +30,43 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
-        Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
-        Application.Run(new MainForm());
+        // multi-instance detection
+        // NOTE: GUID is used to prevent conflicts with potential
+        // identically named but different program
+        // based on: https://stackoverflow.com/a/184143
+        using (Mutex mutex = new(true, "{93a501d4-386d-4eb6-a26c-bc3e76bb10c0}", out bool createdNew))
+        {
+            // this instance is the first to open; proceed as normal:
+            if (createdNew)
+            {
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new MainForm());
+                return;
+            }
+
+            // the overlay app is already running,
+            // ask if we should close it
+            Process current = Process.GetCurrentProcess();
+            foreach (Process p in Process.GetProcessesByName(current.ProcessName))
+            {
+                if (p.Id == current.Id)
+                {
+                    continue;
+                }
+
+                if (Utils.ShowWarning(
+                    $"The OBC overlay service is already running! (PID: {p.Id})\n" +
+                    $"Would you like to close it?", "Already running") == DialogResult.Yes)
+                {
+                    p.CloseMainWindow();
+                    if (!p.WaitForExit(3000))
+                    {
+                        p.Kill();
+                    }
+                }
+                break;
+            }
+        }
     }
 }
