@@ -28,25 +28,20 @@ internal static class User32
     internal static bool SetBlur(IntPtr hWnd, bool enable)
     {
         // TODO: support windows versions other than 10 (and probably 11)
-        AccentPolicy accentPolicy = new()
-        {
-            AccentState = enable ? 4 : 0,
-            AccentFlags = 0,
-            Color = 0x01000000,
-            AnimationId = 0
-        };
-        int accentSize = Marshal.SizeOf(accentPolicy);
+        AccentPolicy policy = default;
+        policy.AccentState = enable ? 4 : 0;
+        policy.Color = 0x01000000;
+
+        int accentSize = Marshal.SizeOf(policy);
         IntPtr accentPtr = Marshal.AllocHGlobal(accentSize);
         try
         {
-            Marshal.StructureToPtr(accentPolicy, accentPtr, false);
+            Marshal.StructureToPtr(policy, accentPtr, false);
 
-            WindowCompositionAttributeData data = new()
-            {
-                Attribute = 19,
-                Data = accentPtr,
-                SizeOfData = accentSize,
-            };
+            WndCompAttrData data = default;
+            data.Attribute = 19;
+            data.Data = accentPtr;
+            data.SizeOfData = accentSize;
             return SetWindowCompositionAttribute(hWnd, ref data) == 0;
         }
         finally
@@ -79,7 +74,7 @@ internal static class User32
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct WindowCompositionAttributeData
+    private struct WndCompAttrData
     {
         public int Attribute;
         public IntPtr Data;
@@ -98,7 +93,7 @@ internal static class User32
     [DllImport("User32", ExactSpelling = true, SetLastError = true)]
     private static extern int SetWindowCompositionAttribute(
         IntPtr hWnd,
-        ref WindowCompositionAttributeData data);
+        ref WndCompAttrData data);
 
     [DllImport("User32", ExactSpelling = true, SetLastError = true)]
     private static extern IntPtr RegisterPowerSettingNotification(

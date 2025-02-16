@@ -28,7 +28,7 @@ namespace OBC.Overlays;
 
 public partial class MainForm : Form
 {
-    private ObcEventType OverlayMode = ObcEventType.None;
+    private ObcEventType OverlayMode;
     private int Value = -1;
     private bool ShowTextVal;
     private bool BlurEnabled;
@@ -63,11 +63,11 @@ public partial class MainForm : Form
         }
     }
 
-    public MainForm(bool autoStart = false)
+    public MainForm(bool autoRun)
     {
         ClientSize = new Size(192, 192);
         DoubleBuffered = true;
-        Font = new Font("Segoe UI", 10, GraphicsUnit.Point);
+        Font = new Font("Segoe UI", 10);
         FormBorderStyle = FormBorderStyle.None;
         Icon = Utils.GetEntryAssemblyIcon();
         ShowInTaskbar = false;
@@ -78,22 +78,22 @@ public partial class MainForm : Form
         AutoScaleMode = AutoScaleMode.Dpi;
         DpiScale = AutoScaleDimensions.Width / 96F;
 
-        if (!autoStart)
+        if (!autoRun)
         {
-            TrayIcon.BalloonTipClicked += HideTrayIcon;
-            TrayIcon.BalloonTipClosed += HideTrayIcon;
+            TrayIcon.BalloonTipClicked += new EventHandler(HideTray);
+            TrayIcon.BalloonTipClosed += new EventHandler(HideTray);
             TrayIcon.Visible = true;
             TrayIcon.ShowBalloonTip(3000);
         }
 
-        FadeTimer.Tick += FadeTimerTick;
+        FadeTimer.Tick += new EventHandler(FadeOut);
 
         IPCClient.Error += IPCError;
         IPCClient.ServerMessage += IPCMessage;
         IPCClient.Start();
     }
 
-    private void HideTrayIcon(object sender, EventArgs e)
+    private void HideTray(object sender, EventArgs e)
     {
         TrayIcon.Visible = false;
     }
@@ -113,16 +113,12 @@ public partial class MainForm : Form
             case 0x218: // WM_POWERBROADCAST
                 if (m.WParam.ToInt32() == 0x8013)   // PBT_POWERSETTINGCHANGE
                 {
-                    IntPtr pbsPtr = m.LParam;
-                    PowerBroadcastSetting pbsStruct = Marshal.PtrToStructure<PowerBroadcastSetting>(pbsPtr);
-
-                    if (pbsStruct.PowerSetting != User32.LidSwitchGuid)
+                    PowerBroadcastSetting pbsStruct = Marshal.PtrToStructure<PowerBroadcastSetting>(m.LParam);
+                    if (pbsStruct.PowerSetting == User32.LidSwitchGuid)
                     {
-                        break;
+                        IPCClient?.PushMessage(new ObcEvent(
+                            ObcEventType.LidSwitchChange, pbsStruct.Data));
                     }
-
-                    IPCClient?.PushMessage(new ObcEvent(
-                        ObcEventType.LidSwitchChange, pbsStruct.Data));
                 }
                 break;
         }
@@ -172,41 +168,36 @@ public partial class MainForm : Form
         User32.SetBlur(Handle, BlurEnabled);
     }
 
-    private void FadeTimerTick(object sender, EventArgs e)
+    private void FadeOut(object sender, EventArgs e)
     {
         if (FadeTimer.Interval > 50)
         {
             FadeTimer.Stop();
             FadeTimer.Interval = 50;
             FadeTimer.Start();
+            return;
         }
-        else
+
+        Opacity -= 0.1;
+        if (Opacity <= 0)
         {
-            Opacity -= 0.1;
-            if (Opacity <= 0)
-            {
-                FadeTimer.Stop();
-                Hide();
-            }
+            FadeTimer.Stop();
+            Hide();
         }
     }
 
     private void IPCMessage(object sender, PipeMessageEventArgs<ObcEvent, ObcEvent> e)
     {
-        Invoke(ShowOverlay, e.Message.Event, e.Message.Value);
-    }
+        Invoke(FadeTimer.Stop);
 
-    private void ShowOverlay(ObcEventType type, int value)
-    {
-        FadeTimer.Stop();
-
+        ObcEventType type = e.Message.Event;
         OverlayMode = type;
-        Value = value;
+        Value = e.Message.Value;
         ShowTextVal = type == ObcEventType.Volume;
 
         Opacity = 1;
         FadeTimer.Interval = 2000;
-        FadeTimer.Start();
+        Invoke(FadeTimer.Start);
 
         Invalidate();
         Show();
@@ -225,39 +216,55 @@ public partial class MainForm : Form
     {
         Graphics g = e.Graphics;
         g.PixelOffsetMode = PixelOffsetMode.Half;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
 
         switch (OverlayMode)
         {
             case ObcEventType.Volume:
+                g.FillPolygon(fgBrush, Speaker(58, 58, 32, 48));
                 if (Value > 0)
                 {
-                    DrawVolUnmuted(g);
+                    g.DrawArc(fgPen, 80, 70, 24, 24, 300, 120, DpiScale);
+                    g.DrawArc(fgPen, 68, 58, 48, 48, 300, 120, DpiScale);
+                    g.DrawArc(fgPen, 56, 46, 72, 72, 300, 120, DpiScale);
                 }
-                else
-                {
-                    DrawVolMuted(g);
-                }
+                g.SmoothingMode = SmoothingMode.None;
                 break;
             case ObcEventType.DispBright:
-                DrawBrightness(g);
+                int sunX = 48, sunY = 34;
+                g.DrawEllipse(fgPen, sunX + 38, sunY + 38, 20, 20, DpiScale);
+                g.DrawLine(fgPen, sunX + 82, sunY + 14, sunX + 62, sunY + 34, DpiScale);    // top-right
+                g.DrawLine(fgPen, sunX + 82, sunY + 82, sunX + 62, sunY + 62, DpiScale);    // bottom-right
+                g.DrawLine(fgPen, sunX + 14, sunY + 82, sunX + 34, sunY + 62, DpiScale);    // bottom-left
+                g.DrawLine(fgPen, sunX + 14, sunY + 14, sunX + 34, sunY + 34, DpiScale);    // top-left
+
+                g.SmoothingMode = SmoothingMode.None;
+                g.DrawLine(fgPen, sunX + 48, sunY, sunX + 48, sunY + 28, DpiScale);         // top
+                g.DrawLine(fgPen, sunX + 68, sunY + 48, sunX + 96, sunY + 48, DpiScale);    // right
+                g.DrawLine(fgPen, sunX + 48, sunY + 68, sunX + 48, sunY + 96, DpiScale);    // bottom
+                g.DrawLine(fgPen, sunX, sunY + 48, sunX + 28, sunY + 48, DpiScale);         // left
                 break;
             case ObcEventType.KeyLightBright:
                 if (Value > 0)
                 {
-                    DrawKeyLightOn(g);
+                    g.DrawLine(fgPen, 41, 94, 62, 99, DpiScale);
+                    g.DrawLine(fgPen, 59, 64, 72, 79, DpiScale);
+                    g.DrawLine(fgPen, 133, 64, 120, 79, DpiScale);
+                    g.DrawLine(fgPen, 151, 94, 130, 99, DpiScale);
+
+                    g.SmoothingMode = SmoothingMode.None;
+                    g.DrawLine(fgPen, 96, 51, 96, 71, DpiScale);
                 }
-                else
-                {
-                    DrawKeyLightOff(g);
-                }
+                g.FillRectangle(fgBrush, 72, 102, 48, 8, DpiScale);
                 break;
             case ObcEventType.Eject:
-                DrawEject(g);
+                g.FillPolygon(fgBrush, Triangle(64, 64, 64, 40));
+                g.SmoothingMode = SmoothingMode.None;
+                g.FillRectangle(fgBrush, 64, 112, 64, 8, DpiScale);
                 break;
         }
 
         // render the "progress bar"
-        g.SmoothingMode = SmoothingMode.None;
         if (Value > -1)
         {
             int value = (int)(Value * DpiScale * 128 / 100);
@@ -275,63 +282,6 @@ public partial class MainForm : Form
                 g.DrawString($"{Value}%", Font, fgBrush, 96 * DpiScale, 166 * DpiScale, ValFmt);
             }
         }
-    }
-
-    private void DrawEject(Graphics g)
-    {
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.FillPolygon(fgBrush, Triangle(64, 64, 64, 40));
-        g.SmoothingMode = SmoothingMode.None;
-        g.FillRectangle(fgBrush, 64, 112, 64, 8, DpiScale);
-    }
-
-    private void DrawKeyLightOff(Graphics g)
-    {
-        g.SmoothingMode = SmoothingMode.None;
-        g.FillRectangle(fgBrush, 72, 102, 48, 8, DpiScale);
-    }
-
-    private void DrawKeyLightOn(Graphics g)
-    {
-        DrawKeyLightOff(g);
-        g.DrawLine(fgPen, 96, 51, 96, 71, DpiScale);
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.DrawLine(fgPen, 41, 94, 62, 99, DpiScale);
-        g.DrawLine(fgPen, 59, 64, 72, 79, DpiScale);
-        g.DrawLine(fgPen, 133, 64, 120, 79, DpiScale);
-        g.DrawLine(fgPen, 151, 94, 130, 99, DpiScale);
-    }
-
-    private void DrawVolMuted(Graphics g)
-    {
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.FillPolygon(fgBrush, Speaker(58, 58, 32, 48));
-    }
-
-    private void DrawVolUnmuted(Graphics g)
-    {
-        DrawVolMuted(g);
-        g.DrawArc(fgPen, 80, 70, 24, 24, 300, 120, DpiScale);
-        g.DrawArc(fgPen, 68, 58, 48, 48, 300, 120, DpiScale);
-        g.DrawArc(fgPen, 56, 46, 72, 72, 300, 120, DpiScale);
-    }
-
-    private void DrawBrightness(Graphics g)
-    {
-        int sunX = 48, sunY = 34;
-
-        g.SmoothingMode = SmoothingMode.None;
-        g.DrawLine(fgPen, sunX + 48, sunY, sunX + 48, sunY + 28, DpiScale);   // top
-        g.DrawLine(fgPen, sunX + 68, sunY + 48, sunX + 96, sunY + 48, DpiScale);   // right
-        g.DrawLine(fgPen, sunX + 48, sunY + 68, sunX + 48, sunY + 96, DpiScale);   // bottom
-        g.DrawLine(fgPen, sunX, sunY + 48, sunX + 28, sunY + 48, DpiScale);   // left
-
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.DrawEllipse(fgPen, sunX + 38, sunY + 38, 20, 20, DpiScale);
-        g.DrawLine(fgPen, sunX + 82, sunY + 14, sunX + 62, sunY + 34, DpiScale);   // top-right
-        g.DrawLine(fgPen, sunX + 82, sunY + 82, sunX + 62, sunY + 62, DpiScale);   // bottom-right
-        g.DrawLine(fgPen, sunX + 14, sunY + 82, sunX + 34, sunY + 62, DpiScale);   // bottom-left
-        g.DrawLine(fgPen, sunX + 14, sunY + 14, sunX + 34, sunY + 34, DpiScale);   // top-left
     }
 
     private Point[] Speaker(int x, int y, int w, int h)
@@ -359,13 +309,12 @@ public partial class MainForm : Form
         int xs = (int)(x * DpiScale),
             ys = (int)(y * DpiScale),
             ws = (int)(w * DpiScale),
-            hs = (int)(h * DpiScale),
-            w2 = ws / 2;
+            hs = (int)(h * DpiScale);
 
         return
         [
             new Point(xs, ys + hs),
-            new Point(xs + w2, ys),
+            new Point(xs + ws / 2, ys),
             new Point(xs + ws, ys + hs),
         ];
     }
@@ -376,8 +325,7 @@ public partial class MainForm : Form
         using (RegistryKey key = Registry.CurrentUser.OpenSubKey(
             @"SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
         {
-            object value = key?.GetValue("EnableTransparency");
-            return value is int i && i != 0;
+            return key?.GetValue("EnableTransparency") is int i && i != 0;
         }
     }
 }

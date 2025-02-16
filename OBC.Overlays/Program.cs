@@ -30,6 +30,9 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
+
         // multi-instance detection
         // NOTE: GUID is used to prevent conflicts with potential
         // identically named but different program
@@ -39,8 +42,6 @@ internal static class Program
             // this instance is the first to open; proceed as normal:
             if (createdNew)
             {
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new MainForm(args.Length > 0 && args[0] == "--startup"));
                 return;
             }
