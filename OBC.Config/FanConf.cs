@@ -37,4 +37,16 @@ public sealed class FanConf
     /// </summary>
     [XmlElement]
     public float Tmax { get; set; }
+
+    /// <summary>
+    /// How much the sensor's temperature needs to drop by after
+    /// peaking before selecting a lower speed.
+    /// </summary>
+    /// <remarks>
+    /// For example, with the default setting of 5°, if a sensor reaches
+    /// 60°, the "effective" temperature used to calculate fan RPM wouldn't
+    /// begin lowering until the "real" temperature drops below 55°.
+    /// </remarks>
+    [XmlElement]
+    public float Tdown { get; set; } = 5;
 }

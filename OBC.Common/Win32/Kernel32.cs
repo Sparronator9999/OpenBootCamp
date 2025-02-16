@@ -33,22 +33,22 @@ internal static class Kernel32
     [DllImport("Kernel32", ExactSpelling = true, SetLastError = true,
         CharSet = CharSet.Unicode)]
     internal static extern IntPtr CreateFileW(
-        string lpFileName,
-        GenericAccessRights dwDesiredAccess,
-        FileShare dwShareMode,
-        IntPtr lpSecurityAttributes,
-        FileMode dwCreationDisposition,
-        FileAttributes dwFlagsAndAttributes,
-        IntPtr hTemplateFile);
+        string name,
+        GenericAccessRights desiredAccess,
+        FileShare shareMode,
+        IntPtr securityAttr,
+        FileMode createMode,
+        FileAttributes attr,
+        IntPtr template);
 
     [DllImport("Kernel32", ExactSpelling = true, SetLastError = true)]
     internal static extern unsafe bool DeviceIoControl(
         IntPtr hDevice,
-        uint dwIoControlCode,
-        void* lpInBuffer,
-        uint nInBufferSize,
-        void* lpOutBuffer,
-        uint nOutBufferSize,
-        out uint lpBytesReturned,
-        NativeOverlapped* lpOverlapped);
+        uint ctlCode,
+        void* inBuffer,
+        uint inBufSize,
+        void* outBuffer,
+        uint outBufSize,
+        out uint bytesReturned,
+        IntPtr lpOverlapped);
 }

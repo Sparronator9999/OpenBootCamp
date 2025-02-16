@@ -28,46 +28,46 @@ internal static class AdvApi32
     [DllImport("AdvApi32", ExactSpelling = true, SetLastError = true,
         CharSet = CharSet.Unicode)]
     internal static extern IntPtr OpenSCManagerW(
-        string lpMachineName,
-        string lpDatabaseName,
-        uint dwDesiredAccess);
+        string machineName,
+        string databaseName,
+        uint desiredAccess);
 
     [DllImport("AdvApi32", ExactSpelling = true, SetLastError = true,
         CharSet = CharSet.Unicode)]
     internal static extern IntPtr CreateServiceW(
         IntPtr hSCManager,
-        string lpServiceName,
-        string lpDisplayName,
-        uint dwDesiredAccess,
-        ServiceType dwServiceType,
-        ServiceStartMode dwStartType,
-        uint dwErrorControl,
-        string lpBinaryPathName,
-        string lpLoadOrderGroup,
-        string lpdwTagId,
-        string lpDependencies,
-        string lpServiceStartName,
-        string lpPassword);
+        string svcName,
+        string displayName,
+        uint desiredAccess,
+        ServiceType svcType,
+        ServiceStartMode startType,
+        uint errMode,
+        string binPath,
+        string loadOrderGroup,
+        string tagId,
+        string deps,
+        string userName,
+        string password);
 
     [DllImport("AdvApi32", ExactSpelling = true, SetLastError = true,
         CharSet = CharSet.Unicode)]
     internal static extern IntPtr OpenServiceW(
         IntPtr hSCManager,
-        string lpServiceName,
-        uint dwDesiredAccess);
+        string svcName,
+        uint desiredAccess);
 
     [DllImport("AdvApi32", ExactSpelling = true, SetLastError = true,
         CharSet = CharSet.Unicode)]
     internal static extern bool StartServiceW(
         IntPtr hService,
-        uint dwNumServiceArgs,
-        IntPtr lpServiceArgVectors);
+        uint argsLen,
+        IntPtr args);
 
     [DllImport("AdvApi32", ExactSpelling = true, SetLastError = true)]
     internal static extern bool ControlService(
         IntPtr hService,
-        uint dwControl,
-        IntPtr lpServiceStatus);
+        uint ctlCode,
+        IntPtr svcStatus);
 
     [DllImport("AdvApi32", ExactSpelling = true, SetLastError = true)]
     internal static extern bool DeleteService(IntPtr hService);

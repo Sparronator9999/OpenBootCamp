@@ -5,7 +5,8 @@ An open-source implementation of some of Boot Camp's keyboard services in C#.
 ## Disclaimers
 
 - This program was developed by using clean-room reverse-engineering
-  techniques, including decompiling Boot Camp services.
+  techniques (including decompiling Boot Camp services) and publicly-available
+  information on Apple hardware (particularly the SMC).
 - This program, repository and its authors are **not** affiliated with Apple
   Inc. in any way, shape, or form.
 
@@ -17,6 +18,14 @@ OpenBootCamp currently implements the following features of Boot Camp Manager:
   the standard Fn keys, or the special function printed on each key.
 - **Special Fn key handling:** This includes keys like the display brightness,
   keyboard brightness, and optical drive eject keys.
+- **Fan control** (WIP): Fix Apple's garbage fan profiles without
+  having to decide between terrible thermals or terrible battery life\*.
+
+<sub>\*When running on Windows, [Macs Fan Control](https://crystalidea.com/macs-fan-control)
+appears to install its own driver that significantly impacts battery life
+*even after closing Macs Fan Control*, and persists until a reboot. OBC uses
+the `MacHALDriver` that comes with official Boot Camp services to control fan
+speeds. Obviously, increasing your fan speeds from stock will still impact battery life.</sub>
 
 Additionally, the following bugs from the official Boot Camp Manager are fixed:
 
@@ -34,15 +43,6 @@ Roughly in priority order:
 - A few power saving features:
   - Set keyboard backlight state based on power source or battery charge (e.g.
     low battery, switching between AC and battery power)
-- Fan control + sensor monitoring?
-  - Hopefully this will be doable without adversely affecting battery life
-    (unlike MacsFanControl, which seems to install a driver that stays running
-    even after quitting the program that saps battery life (even when doing
-    nothing) and doesn't uninstall until a reboot)
-  - Possible thanks to [SMCKit](https://github.com/beltex/SMCKit) existing
-    (yes, I know it's for macOS, but having a look at the source was what
-    allowed me to figure out what some of the `MacHALDriver.sys` IOCTLs were
-    for, and how to get a list of every SMC key)
 - Volume control on older Windows versions (7 and earlier?)
 - Smooth keyboard backlight animations
 - More that I haven't thought of yet
@@ -50,10 +50,11 @@ Roughly in priority order:
 ## Supported systems
 
 Only Apple computers that can run Windows are supported (i.e. any Intel Mac).
-Any non-Apple Windows systems are not supported (even if using a Magic
-Mouse/Trackpad/Keyboard).
+Any non-Apple Windows systems are not supported (even if using an external
+Magic Mouse/Trackpad/Keyboard).
 
-Windows 7 SP1 and later with .NET Framework 4.8 should work without issues.
+Windows 7 SP1 and later with .NET Framework 4.8 should mostly work without
+issues.
 
 Windows Vista/XP may work if you downgrade the project to .NET Framework 4.6
 (for Vista SP2) or 4.0 (for XP SP3), but are currently unsupported.
@@ -66,7 +67,7 @@ The following drivers are required for OpenBootCamp to work:
   and enabling display brightness shortcuts on Windows 8 and later.
 - `KeyAgent.sys` for enabling other special Fn keys and for brightness/volume
   keys on Windows 7 and lower.
-- `MacHALDriver.sys` for keyboard backlight support.
+- `MacHALDriver.sys` for keyboard backlight and fan control support.
 
 ## Download
 
@@ -117,7 +118,8 @@ Alternatively, you can [compile the program yourself](#compile).-->
 
 Yep, and it's [officially supported by Apple](https://support.apple.com/en-us/102622)
 on any Intel Mac (with varying "official" Windows support, but I was able to get
-the latest Windows 10 LTSC single-booting on a 2010 MacBook with few issues).
+the latest Windows 10 LTSC single-booting on a 2010 MacBook (the white unibody
+model) with few issues).
 
 ### How did you make this?!
 
@@ -192,6 +194,14 @@ No.
 
 Linux already has native support for Apple hardware (at least on the laptops
 I tested it on), so a Linux port would be pointless.
+
+## Special thanks
+
+- [VirtualSMC](https://github.com/acidanthera/VirtualSMC) for their detailed
+  SMC key documentation (check the `Docs` folder in the linked repo).
+- [SMCKit](https://github.com/beltex/SMCKit)/[libsmc](https://github.com/beltex/libsmc)
+  for the SMC function names used in
+  [MacHALDriverIoCtl.cs](https://github.com/Sparronator9999/OpenBootCamp/blob/main/OBC.Service/MacHALDriverIOCTL.cs).
 
 ## License and Copyright
 

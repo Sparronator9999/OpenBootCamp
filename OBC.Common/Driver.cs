@@ -286,80 +286,12 @@ public class Driver : IDisposable
         }
     }
 
-
-    /// <inheritdoc cref="IOControl(uint, void*, uint, void*, uint, out uint)"/>
+    // TODO: fix documentation
     public unsafe bool IOControl(uint ctlCode)
     {
         return IOControl(ctlCode, null, 0, null, 0, out _);
     }
 
-    /// <inheritdoc cref="IOControl(uint, void*, uint, out uint, bool)"/>
-    public unsafe bool IOControl(uint ctlCode, void* buffer, uint bufSize, bool isOutBuffer = false)
-    {
-        return IOControl(ctlCode, buffer, bufSize, out _, isOutBuffer);
-    }
-
-    /// <param name="buffer">
-    /// <para>
-    /// A pointer to the buffer that will be passed to the driver.
-    /// </para>
-    /// <para>
-    /// Whether the buffer is passed as an input or output buffer is
-    /// dependent on the setting of <paramref name="isOutBuffer"/>.
-    /// </para>
-    /// </param>
-    /// <param name="bufSize">
-    /// The size of the buffer, in bytes.
-    /// </param>
-    /// <param name="isOutBuffer">
-    /// <para>
-    /// Set to <c>true</c> to pass the provided
-    /// buffer to the driver as an output buffer.
-    /// </para>
-    /// <para>
-    /// Set to <c>false</c> to pass the buffer
-    /// to the driver as an input buffer.
-    /// </para>
-    /// <para>The default is <c>false</c>.</para>
-    /// </param>
-    /// <inheritdoc cref="IOControl(uint, void*, uint, void*, uint, out uint)"/>
-    public unsafe bool IOControl(uint ctlCode, void* buffer, uint bufSize, out uint bytesReturned, bool isOutBuffer = false)
-    {
-        return isOutBuffer
-            ? IOControl(ctlCode, null, 0, buffer, bufSize, out bytesReturned)
-            : IOControl(ctlCode, buffer, bufSize, null, 0, out bytesReturned);
-    }
-
-    /// <summary>
-    /// Sends a control code to the driver, causing the
-    /// corresponding operation to be performed by the driver.
-    /// </summary>
-    /// <param name="ctlCode">
-    /// The control code that represents the
-    /// operation that the driver should perform.
-    /// </param>
-    /// <param name="inBuffer">
-    /// A pointer to the buffer that contains the
-    /// data required to perform the operation.
-    /// </param>
-    /// <param name="inBufSize">
-    /// The size of the input buffer, in bytes.
-    /// </param>
-    /// <param name="outBuffer">
-    /// A pointer to the buffer that will receive the
-    /// data returned by the operation.
-    /// </param>
-    /// <param name="outBufSize">
-    /// The size of the output buffer, in bytes.
-    /// </param>
-    /// <param name="bytesReturned">
-    /// The variable that will receive the size of the data stored
-    /// in the output buffer returned by the driver, in bytes.
-    /// </param>
-    /// <returns>
-    /// <c>true</c> if the operation completed
-    /// successfully, otherwise <c>false</c>.
-    /// </returns>
     public unsafe bool IOControl(uint ctlCode, void* inBuffer, uint inBufSize, void* outBuffer, uint outBufSize, out uint bytesReturned)
     {
         if (!IsOpen)
@@ -372,7 +304,7 @@ public class Driver : IDisposable
             hDevice, ctlCode,
             inBuffer, inBufSize,
             outBuffer, outBufSize,
-            out bytesReturned, null);
+            out bytesReturned, IntPtr.Zero);
 
         ErrorCode = success
             ? 0
@@ -381,33 +313,18 @@ public class Driver : IDisposable
         return success;
     }
 
-
-    /// <inheritdoc cref="IOControl(uint, void*, uint, bool)"/>
     public unsafe bool IOControl(uint ctlCode, IntPtr buffer, uint bufSize, bool isOutBuffer = false)
     {
-        return IOControl(ctlCode, buffer.ToPointer(), bufSize, isOutBuffer);
+        return isOutBuffer
+            ? IOControl(ctlCode, null, 0, buffer.ToPointer(), bufSize, out _)
+            : IOControl(ctlCode, buffer.ToPointer(), bufSize, null, 0, out _);
     }
 
-    /// <param name="buffer">
-    /// <para>
-    /// The buffer that will be passed to the driver.
-    /// </para>
-    /// <para>
-    /// Whether the buffer is passed as an input or output buffer is
-    /// dependent on the setting of <paramref name="isOutBuffer"/>.
-    /// </para>
-    /// </param>
-    /// <inheritdoc cref="IOControl(uint, void*, uint, bool)"/>
     public bool IOControl(uint ctlCode, byte[] buffer, bool isOutBuffer = false)
     {
-        return IOControl(ctlCode, buffer, out _, isOutBuffer);
-    }
-
-    public bool IOControl(uint ctlCode, byte[] buffer, out uint bytesReturned, bool isOutBuffer = false)
-    {
         return isOutBuffer
-            ? IOControl(ctlCode, null, buffer, out bytesReturned)
-            : IOControl(ctlCode, buffer, null, out bytesReturned);
+            ? IOControl(ctlCode, null, buffer, out _)
+            : IOControl(ctlCode, buffer, null, out _);
     }
 
     public unsafe bool IOControl(uint ctlCode, byte[] inBuffer, byte[] outBuffer, out uint bytesReturned)
@@ -423,13 +340,7 @@ public class Driver : IDisposable
         }
     }
 
-    public bool IOControl<T>(uint ctlCode, ref T buffer, bool isOutBuffer = false)
-        where T : unmanaged
-    {
-        return IOControl(ctlCode, ref buffer, out _, isOutBuffer);
-    }
-
-    public unsafe bool IOControl<T>(uint ctlCode, ref T buffer, out uint bytesReturned, bool isOutBuffer = false)
+    public unsafe bool IOControl<T>(uint ctlCode, ref T buffer, bool isOutBuffer = false)
         where T : unmanaged
     {
         fixed (T* pBuffer = &buffer)
@@ -438,11 +349,11 @@ public class Driver : IDisposable
                 ? IOControl(ctlCode,
                     null, 0,
                     pBuffer, (uint)sizeof(T),
-                    out bytesReturned)
+                    out _)
                 : IOControl(ctlCode,
                     pBuffer, (uint)sizeof(T),
                     null, 0,
-                    out bytesReturned);
+                    out _);
         }
     }
 
@@ -450,8 +361,6 @@ public class Driver : IDisposable
     {
         Close();
     }
-
-
 
 #pragma warning disable IDE0079 // IDE0079: Remove unnecessary suppression
 #pragma warning disable CA1816  // CA1816: Dispose methods should call SuppressFinalize (the Driver may be re-opened after calling Dispose)

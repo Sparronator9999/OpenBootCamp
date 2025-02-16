@@ -38,6 +38,7 @@ internal static class Program
     {
         if (Environment.UserInteractive)
         {
+            Application.EnableVisualStyles();
             MessageBox.Show(Strings.GetString("errDirectRun"), "Error",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }

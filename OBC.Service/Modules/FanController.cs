@@ -127,6 +127,10 @@ internal class FanController : IDisposable
         short ctrlBits = 0;
         for (int i = 0; i < Config.FanConfs.Count; i++)
         {
+            // reset target speed and effective temp.
+            // so that fan speeds get re-applied properly
+            Fans[i].Temp = 0;
+            Fans[i].TargetSpeed = 0;
             if (Config.FanConfs[i].Enabled)
             {
                 ctrlBits |= (short)(1 << i);
@@ -160,11 +164,26 @@ internal class FanController : IDisposable
                 // get target speed based on config's Tmin + Tmax
                 float tRpm;
                 float temp = GetTemp(cfg.SensorKey);
-                if (temp < cfg.Tmin)
+
+                // increase effective temperature if
+                // real temp goes above effective
+                if (temp > fan.Temp || cfg.Tdown <= 0)
+                {
+                    fan.Temp = temp;
+                }
+                // decrease effective temperature if real temp
+                // drops more than Tdown degrees below effective
+                else if (temp + cfg.Tdown < fan.Temp)
+                {
+                    fan.Temp = temp + cfg.Tdown;
+                }
+                Log.Debug($"temps: real {temp}, effective {fan.Temp}");
+
+                if (fan.Temp < cfg.Tmin)
                 {
                     tRpm = fan.MinSpeed;
                 }
-                else if (temp > cfg.Tmax)
+                else if (fan.Temp > cfg.Tmax)
                 {
                     tRpm = fan.MaxSpeed;
                 }
@@ -172,7 +191,7 @@ internal class FanController : IDisposable
                 {
                     float dT = cfg.Tmax - cfg.Tmin,
                         dS = fan.MaxSpeed - fan.MinSpeed,
-                        tAdj = temp - cfg.Tmin;
+                        tAdj = fan.Temp - cfg.Tmin;
 
                     // round to nearest 100 rpm
                     tRpm = (int)((tAdj * dS / dT + fan.MinSpeed) / 100 + 0.5) * 100;
@@ -224,7 +243,7 @@ internal class FanController : IDisposable
             ? value : -1;
     }
 
-    private float GetSysTargetFanSpeed(int fan)
+    /*private float GetTargetFanSpeed(int fan)
     {
         return SMC.ReadFPE2($"F{fan}Tg", out float value)
             ? value : -1;
@@ -234,7 +253,7 @@ internal class FanController : IDisposable
     {
         return SMC.ReadFPE2($"F{fan}Ac", out float value)
             ? value : -1;
-    }
+    }*/
 
     private float GetTemp(string key)
     {
@@ -258,9 +277,10 @@ internal class FanController : IDisposable
 
     private class Fan
     {
-        public string Name;
-        public float MinSpeed;
-        public float MaxSpeed;
-        public float TargetSpeed;
+        internal string Name;
+        internal float MinSpeed;
+        internal float MaxSpeed;
+        internal float TargetSpeed;
+        internal float Temp;
     }
 }
