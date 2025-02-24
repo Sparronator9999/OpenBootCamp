@@ -20,7 +20,6 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Threading.Tasks;
@@ -210,12 +209,23 @@ public partial class MainForm : Form
 
         if (btnOBCOInstall.Text == "Install")
         {
-            key.SetValue("ObcOverlay", $"\"{Assembly.GetEntryAssembly().Location}\" --startup");
-            btnOBCOInstall.Text = "Uninstall";
+            if (File.Exists(@".\ObcOverlay.exe"))
+            {
+                key.SetValue("ObcOverlay", $"\"{Path.GetFullPath(@".\ObcOverlay.exe")}\" --startup");
+                lblOBCOState.ForeColor = Color.DarkGreen;
+                lblOBCOState.Text = "Installed";
+                btnOBCOInstall.Text = "Uninstall";
+            }
+            else
+            {
+                Utils.ShowError("Could not find ObcOverlay.exe!");
+            }
         }
         else if (btnOBCOInstall.Text == "Uninstall")
         {
             key.DeleteValue("ObcOverlay", false);
+            lblOBCOState.ForeColor = Color.Maroon;
+            lblOBCOState.Text = "Not installed";
             btnOBCOInstall.Text = "Install";
         }
     }
