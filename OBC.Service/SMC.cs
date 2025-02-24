@@ -8,7 +8,7 @@ namespace OBC.Service;
 /// Contains methods to interface with an Apple
 /// computer's System Management Controller (SMC).
 /// </summary>
-internal class SMC : IDisposable
+internal sealed class SMC : IDisposable
 {
     private readonly Driver HAL;
 
@@ -38,8 +38,7 @@ internal class SMC : IDisposable
                 // reverse or smth
                 byte[] val = new byte[4];
                 Array.Copy(outBuffer, val, val.Length);
-                Array.Reverse(val);
-                return BitConverter.ToInt32(val, 0);
+                return BitConverter.ToInt32(ToHostOrder(val), 0);
             }
             return BitConverter.ToInt32(outBuffer, 0);
         }
@@ -66,16 +65,7 @@ internal class SMC : IDisposable
             byte[] inBuffer = BitConverter.GetBytes(i),
                 outBuffer = new byte[5];
 
-            // apparently the index number should be little-endian here,
-            // but the value returned by the IOControl call in GetKeyCount()
-            // returns a big-endian value???
-            // thanks apple for being so easy to work with...
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(inBuffer);
-            }
-
-            if (IOControl(MacHALDriverIoCtl.GetKeyByIndex, inBuffer, outBuffer, out _))
+            if (IOControl(MacHALDriverIoCtl.GetKeyByIndex, ToHostOrder(inBuffer), outBuffer, out _))
             {
                 string key = Encoding.UTF8.GetString(outBuffer, 0, 4);
                 keys[i] = GetKeyInfo(key);
@@ -150,12 +140,7 @@ internal class SMC : IDisposable
     {
         if (ReadRawData(key, sizeof(short), out byte[] data))
         {
-            // TODO: is the little-endian check necessary?
-            if (BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(data);
-            }
-            value = BitConverter.ToInt16(data, 0);
+            value = BitConverter.ToInt16(ToHostOrder(data), 0);
             return true;
         }
         value = 0;
@@ -164,25 +149,14 @@ internal class SMC : IDisposable
 
     public bool WriteInt16(string key, short value)
     {
-        byte[] data = BitConverter.GetBytes(value);
-        // TODO: is the little-endian check necessary?
-        if (BitConverter.IsLittleEndian)
-        {
-            Array.Reverse(data);
-        }
-        return WriteRawData(key, data);
+        return WriteRawData(key, ToHostOrder(BitConverter.GetBytes(value)));
     }
 
     public bool ReadUInt16(string key, out ushort value)
     {
         if (ReadRawData(key, sizeof(ushort), out byte[] data))
         {
-            // TODO: is the little-endian check necessary?
-            if (BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(data);
-            }
-            value = BitConverter.ToUInt16(data, 0);
+            value = BitConverter.ToUInt16(ToHostOrder(data), 0);
             return true;
         }
         value = 0;
@@ -191,25 +165,14 @@ internal class SMC : IDisposable
 
     public bool WriteUInt16(string key, ushort value)
     {
-        byte[] data = BitConverter.GetBytes(value);
-        // TODO: is the little-endian check necessary?
-        if (BitConverter.IsLittleEndian)
-        {
-            Array.Reverse(data);
-        }
-        return WriteRawData(key, data);
+        return WriteRawData(key, ToHostOrder(BitConverter.GetBytes(value)));
     }
 
     public bool ReadInt32(string key, out int value)
     {
         if (ReadRawData(key, sizeof(int), out byte[] data))
         {
-            // TODO: is the little-endian check necessary?
-            if (BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(data);
-            }
-            value = BitConverter.ToInt32(data, 0);
+            value = BitConverter.ToInt32(ToHostOrder(data), 0);
             return true;
         }
         value = 0;
@@ -218,25 +181,14 @@ internal class SMC : IDisposable
 
     public bool WriteInt32(string key, int value)
     {
-        byte[] data = BitConverter.GetBytes(value);
-        // TODO: is the little-endian check necessary?
-        if (BitConverter.IsLittleEndian)
-        {
-            Array.Reverse(data);
-        }
-        return WriteRawData(key, data);
+        return WriteRawData(key, ToHostOrder(BitConverter.GetBytes(value)));
     }
 
     public bool ReadUInt32(string key, out uint value)
     {
         if (ReadRawData(key, sizeof(uint), out byte[] data))
         {
-            // TODO: is the little-endian check necessary?
-            if (BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(data);
-            }
-            value = BitConverter.ToUInt32(data, 0);
+            value = BitConverter.ToUInt32(ToHostOrder(data), 0);
             return true;
         }
         value = 0;
@@ -245,13 +197,7 @@ internal class SMC : IDisposable
 
     public bool WriteUInt32(string key, uint value)
     {
-        byte[] data = BitConverter.GetBytes(value);
-        // TODO: is the little-endian check necessary?
-        if (BitConverter.IsLittleEndian)
-        {
-            Array.Reverse(data);
-        }
-        return WriteRawData(key, data);
+        return WriteRawData(key, ToHostOrder(BitConverter.GetBytes(value)));
     }
 
 
@@ -259,12 +205,7 @@ internal class SMC : IDisposable
     {
         if (ReadRawData(key, sizeof(long), out byte[] data))
         {
-            // TODO: is the little-endian check necessary?
-            if (BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(data);
-            }
-            value = BitConverter.ToInt64(data, 0);
+            value = BitConverter.ToInt64(ToHostOrder(data), 0);
             return true;
         }
         value = 0;
@@ -273,25 +214,14 @@ internal class SMC : IDisposable
 
     public bool WriteInt64(string key, long value)
     {
-        byte[] data = BitConverter.GetBytes(value);
-        // TODO: is the little-endian check necessary?
-        if (BitConverter.IsLittleEndian)
-        {
-            Array.Reverse(data);
-        }
-        return WriteRawData(key, data);
+        return WriteRawData(key, ToHostOrder(BitConverter.GetBytes(value)));
     }
 
     public bool ReadUInt64(string key, out ulong value)
     {
         if (ReadRawData(key, sizeof(ulong), out byte[] data))
         {
-            // TODO: is the little-endian check necessary?
-            if (BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(data);
-            }
-            value = BitConverter.ToUInt64(data, 0);
+            value = BitConverter.ToUInt64(ToHostOrder(data), 0);
             return true;
         }
         value = 0;
@@ -300,13 +230,7 @@ internal class SMC : IDisposable
 
     public bool WriteUInt64(string key, ulong value)
     {
-        byte[] data = BitConverter.GetBytes(value);
-        // TODO: is the little-endian check necessary?
-        if (BitConverter.IsLittleEndian)
-        {
-            Array.Reverse(data);
-        }
-        return WriteRawData(key, data);
+        return WriteRawData(key, ToHostOrder(BitConverter.GetBytes(value)));
     }
 
     public bool ReadFPE2(string key, out float value)
@@ -360,28 +284,24 @@ internal class SMC : IDisposable
         return buffer;
     }
 
-    private static float BytesToFloat(byte[] bytes, int index, int fBits, bool signed)
+    public static float BytesToFloat(byte[] bytes, int index, int fBits, bool signed)
     {
-        // TODO: is the little-endian check necessary?
-        if (BitConverter.IsLittleEndian)
-        {
-            Array.Reverse(bytes);
-        }
-
         if (bytes.Length - index < 2)
         {
             throw new ArgumentException("bytes.Length - index must be 2 or more.");
         }
 
+        bytes = ToHostOrder(bytes);
+
         int intVal = signed
-                ? BitConverter.ToInt16(bytes, index)
-                : BitConverter.ToUInt16(bytes, index);
+            ? BitConverter.ToInt16(bytes, index)
+            : BitConverter.ToUInt16(bytes, index);
 
         float fracVal = (intVal & BitMask(fBits)) / (float)Math.Pow(2, fBits);
         return (intVal >> fBits) + fracVal;
     }
 
-    private static byte[] FloatToBytes(float f, int fBits, bool signed)
+    public static byte[] FloatToBytes(float f, int fBits, bool signed)
     {
         int intVal = (int)f;
         int fracVal = (int)((f - intVal) * Math.Pow(2, fBits));
@@ -397,13 +317,27 @@ internal class SMC : IDisposable
             ushort val = (ushort)((intVal << fBits) + fracVal);
             value = BitConverter.GetBytes(val);
         }
+        return ToHostOrder(value);
+    }
 
-        // TODO: is the little-endian check necessary?
+    public static byte[] ToHostOrder(byte[] bytes)
+    {
+        return ToHostOrder(bytes, 0, bytes.Length);
+    }
+
+    /// <summary>
+    /// Converts an SMC integer value to host order
+    /// (or a host value to SMC order).
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <returns></returns>
+    public static byte[] ToHostOrder(byte[] bytes, int idx, int len)
+    {
         if (BitConverter.IsLittleEndian)
         {
-            Array.Reverse(value);
+            Array.Reverse(bytes, idx, len);
         }
-        return value;
+        return bytes;
     }
 
     private static byte BitMask(int value)
@@ -435,7 +369,7 @@ internal class SMC : IDisposable
     }
 }
 
-internal class SMCKeyInfo
+internal sealed class SMCKeyInfo
 {
     public string Key;
     /// <summary>

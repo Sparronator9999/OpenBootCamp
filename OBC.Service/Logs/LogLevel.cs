@@ -19,7 +19,7 @@ namespace OBC.Service.Logs;
 /// <summary>
 /// The verbosity of logs
 /// </summary>
-public enum LogLevel
+internal enum LogLevel
 {
     /// <summary>
     /// Do not log anything.

@@ -8,7 +8,7 @@ using Timer = System.Timers.Timer;
 
 namespace OBC.Service.Modules;
 
-internal class FanController : IDisposable
+internal sealed class FanController : IDisposable
 {
     private readonly FanControlConf Config;
     private readonly Logger Log;
@@ -177,7 +177,6 @@ internal class FanController : IDisposable
                 {
                     fan.Temp = temp + cfg.Tdown;
                 }
-                Log.Debug($"temps: real {temp}, effective {fan.Temp}");
 
                 if (fan.Temp < cfg.Tmin)
                 {
