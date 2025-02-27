@@ -18,7 +18,6 @@ using System;
 using System.IO;
 using System.Messaging;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace OBC.Common.Win32;
 

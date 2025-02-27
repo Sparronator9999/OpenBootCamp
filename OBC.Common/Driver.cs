@@ -104,7 +104,7 @@ public class Driver : IDisposable
         if (string.IsNullOrEmpty(DriverPath))
         {
             throw new ArgumentException(
-                Strings.GetString("drvNullPath"), DriverPath);
+                "The driver path is set to a null or empty string.", DriverPath);
         }
 
         // Make sure the file we're trying to install actually exists:
@@ -112,7 +112,7 @@ public class Driver : IDisposable
 
         if (!File.Exists(fullPath))
         {
-            throw new FileNotFoundException(Strings.GetString("drvNotFound"), fullPath);
+            throw new FileNotFoundException($"{fullPath} was not found.");
         }
 
         // Try to open the Service Control Manager:
@@ -289,14 +289,13 @@ public class Driver : IDisposable
     // TODO: fix documentation
     public unsafe bool IOControl(uint ctlCode)
     {
-        return IOControl(ctlCode, null, 0, null, 0, out _);
+        return IOControl(ctlCode, null, 0, null, 0);
     }
 
-    public unsafe bool IOControl(uint ctlCode, void* inBuffer, uint inBufSize, void* outBuffer, uint outBufSize, out uint bytesReturned)
+    public unsafe bool IOControl(uint ctlCode, void* inBuffer, uint inBufSize, void* outBuffer, uint outBufSize)
     {
         if (!IsOpen)
         {
-            bytesReturned = 0;
             return false;
         }
 
@@ -304,7 +303,7 @@ public class Driver : IDisposable
             hDevice, ctlCode,
             inBuffer, inBufSize,
             outBuffer, outBufSize,
-            out bytesReturned, IntPtr.Zero);
+            out _, IntPtr.Zero);
 
         ErrorCode = success
             ? 0
@@ -316,18 +315,18 @@ public class Driver : IDisposable
     public unsafe bool IOControl(uint ctlCode, IntPtr buffer, uint bufSize, bool isOutBuffer = false)
     {
         return isOutBuffer
-            ? IOControl(ctlCode, null, 0, buffer.ToPointer(), bufSize, out _)
-            : IOControl(ctlCode, buffer.ToPointer(), bufSize, null, 0, out _);
+            ? IOControl(ctlCode, null, 0, buffer.ToPointer(), bufSize)
+            : IOControl(ctlCode, buffer.ToPointer(), bufSize, null, 0);
     }
 
     public bool IOControl(uint ctlCode, byte[] buffer, bool isOutBuffer = false)
     {
         return isOutBuffer
-            ? IOControl(ctlCode, null, buffer, out _)
-            : IOControl(ctlCode, buffer, null, out _);
+            ? IOControl(ctlCode, null, buffer)
+            : IOControl(ctlCode, buffer, null);
     }
 
-    public unsafe bool IOControl(uint ctlCode, byte[] inBuffer, byte[] outBuffer, out uint bytesReturned)
+    public unsafe bool IOControl(uint ctlCode, byte[] inBuffer, byte[] outBuffer)
     {
         fixed (byte* pInBuffer = inBuffer)
         fixed (byte* pOutBuffer = outBuffer)
@@ -335,8 +334,7 @@ public class Driver : IDisposable
             return IOControl(
                 ctlCode,
                 pInBuffer, inBuffer is null ? 0 : (uint)inBuffer.Length,
-                pOutBuffer, outBuffer is null ? 0 : (uint)outBuffer.Length,
-                out bytesReturned);
+                pOutBuffer, outBuffer is null ? 0 : (uint)outBuffer.Length);
         }
     }
 
@@ -348,12 +346,10 @@ public class Driver : IDisposable
             return isOutBuffer
                 ? IOControl(ctlCode,
                     null, 0,
-                    pBuffer, (uint)sizeof(T),
-                    out _)
+                    pBuffer, (uint)sizeof(T))
                 : IOControl(ctlCode,
                     pBuffer, (uint)sizeof(T),
-                    null, 0,
-                    out _);
+                    null, 0);
         }
     }
 

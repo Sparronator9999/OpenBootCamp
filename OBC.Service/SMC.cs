@@ -30,19 +30,9 @@ internal sealed class SMC : IDisposable
     public int GetKeyCount()
     {
         byte[] inBuffer = GetInBuffer("#KEY");
-        byte[] outBuffer = new byte[32];
-        if (IOControl(MacHALDriverIoCtl.ReadKey, inBuffer, outBuffer, out _))
-        {
-            if (BitConverter.IsLittleEndian)
-            {
-                // reverse or smth
-                byte[] val = new byte[4];
-                Array.Copy(outBuffer, val, val.Length);
-                return BitConverter.ToInt32(ToHostOrder(val), 0);
-            }
-            return BitConverter.ToInt32(outBuffer, 0);
-        }
-        return 0;
+        byte[] outBuffer = new byte[4];
+        return IOControl(MacHALDriverIoCtl.ReadKey, inBuffer, outBuffer)
+            ? BitConverter.ToInt32(ToHostOrder(outBuffer), 0) : 0;
     }
 
     /// <summary>
@@ -56,16 +46,15 @@ internal sealed class SMC : IDisposable
     /// </returns>
     public SMCKeyInfo[] GetSupportedKeys()
     {
-        SMCKeyInfo[] keys = new SMCKeyInfo[GetKeyCount()];
-
         int keyCount = GetKeyCount();
+        SMCKeyInfo[] keys = new SMCKeyInfo[keyCount];
 
         for (int i = 0; i < keyCount; i++)
         {
             byte[] inBuffer = BitConverter.GetBytes(i),
                 outBuffer = new byte[5];
 
-            if (IOControl(MacHALDriverIoCtl.GetKeyByIndex, ToHostOrder(inBuffer), outBuffer, out _))
+            if (IOControl(MacHALDriverIoCtl.GetKeyByIndex, ToHostOrder(inBuffer), outBuffer))
             {
                 string key = Encoding.UTF8.GetString(outBuffer, 0, 4);
                 keys[i] = GetKeyInfo(key);
@@ -83,25 +72,27 @@ internal sealed class SMC : IDisposable
         byte[] inBuffer = GetInBuffer(key),
             outBuffer = new byte[12];
 
-        return IOControl(MacHALDriverIoCtl.GetKeyInfo, inBuffer, outBuffer, out _)
+        return IOControl(MacHALDriverIoCtl.GetKeyInfo, inBuffer, outBuffer)
             ? new SMCKeyInfo(key, outBuffer[0], Encoding.UTF8.GetString(outBuffer, 4, 4), (SMCKeyAttributes)BitConverter.ToInt32(outBuffer, 8))
             : null;
     }
 
     public bool ReadRawData(string key, int len, out byte[] data)
     {
-        byte[] inBuffer = GetInBuffer(key),
-            outBuffer = new byte[len];
+        byte[] inBuffer = GetInBuffer(key);
+        data = new byte[len];
 
-        bool success = IOControl(MacHALDriverIoCtl.ReadKey, inBuffer, outBuffer, out _);
-        data = success ? outBuffer : null;
-        return success;
+        if (IOControl(MacHALDriverIoCtl.ReadKey, inBuffer, data))
+        {
+            return true;
+        }
+        data = null;
+        return false;
     }
 
     public bool WriteRawData(string key, params byte[] data)
     {
-        byte[] inBuffer = GetInBuffer(key, data);
-        return IOControl(MacHALDriverIoCtl.WriteKey, inBuffer);
+        return IOControl(MacHALDriverIoCtl.WriteKey, GetInBuffer(key, data));
     }
 
     public bool ReadInt8(string key, out sbyte value)
@@ -200,7 +191,6 @@ internal sealed class SMC : IDisposable
         return WriteRawData(key, ToHostOrder(BitConverter.GetBytes(value)));
     }
 
-
     public bool ReadInt64(string key, out long value)
     {
         if (ReadRawData(key, sizeof(long), out byte[] data))
@@ -235,9 +225,10 @@ internal sealed class SMC : IDisposable
 
     public bool ReadFPE2(string key, out float value)
     {
-        if (ReadRawData(key, 2, out byte[] data))
+        if (ReadUInt16(key, out ushort val))
         {
-            value = BytesToFloat(data, 0, 2, false);
+            // value / Math.Pow(2, fBits)
+            value = val / 4f;
             return true;
         }
         value = 0;
@@ -246,14 +237,16 @@ internal sealed class SMC : IDisposable
 
     public bool WriteFPE2(string key, float value)
     {
-        return WriteRawData(key, FloatToBytes(value, 2, false));
+        // value * Math.Pow(2, fBits)
+        return WriteUInt16(key, (ushort)(value * 4));
     }
 
     public bool ReadSP78(string key, out float value)
     {
-        if (ReadRawData(key, 2, out byte[] data))
+        if (ReadInt16(key, out short val))
         {
-            value = BytesToFloat(data, 0, 8, true);
+            // value / Math.Pow(2, fBits)
+            value = val / 256f;
             return true;
         }
         value = 0;
@@ -262,7 +255,8 @@ internal sealed class SMC : IDisposable
 
     public bool WriteSP78(string key, float value)
     {
-        return WriteRawData(key, FloatToBytes(value, 8, true));
+        // value * Math.Pow(2, fBits)
+        return WriteInt16(key, (short)(value * 256));
     }
 
     private static byte[] GetInBuffer(string code, byte[] data = null)
@@ -282,42 +276,6 @@ internal sealed class SMC : IDisposable
         }
 
         return buffer;
-    }
-
-    public static float BytesToFloat(byte[] bytes, int index, int fBits, bool signed)
-    {
-        if (bytes.Length - index < 2)
-        {
-            throw new ArgumentException("bytes.Length - index must be 2 or more.");
-        }
-
-        bytes = ToHostOrder(bytes);
-
-        int intVal = signed
-            ? BitConverter.ToInt16(bytes, index)
-            : BitConverter.ToUInt16(bytes, index);
-
-        float fracVal = (intVal & BitMask(fBits)) / (float)Math.Pow(2, fBits);
-        return (intVal >> fBits) + fracVal;
-    }
-
-    public static byte[] FloatToBytes(float f, int fBits, bool signed)
-    {
-        int intVal = (int)f;
-        int fracVal = (int)((f - intVal) * Math.Pow(2, fBits));
-
-        byte[] value;
-        if (signed)
-        {
-            short val = (short)((intVal << fBits) + fracVal);
-            value = BitConverter.GetBytes(val);
-        }
-        else
-        {
-            ushort val = (ushort)((intVal << fBits) + fracVal);
-            value = BitConverter.GetBytes(val);
-        }
-        return ToHostOrder(value);
     }
 
     public static byte[] ToHostOrder(byte[] bytes)
@@ -340,32 +298,14 @@ internal sealed class SMC : IDisposable
         return bytes;
     }
 
-    private static byte BitMask(int value)
-    {
-        // TODO: is there a better way to do this?
-        return value switch
-        {
-            0 => 0,
-            1 => 0x1,
-            2 => 0x3,
-            3 => 0x7,
-            4 => 0xf,
-            5 => 0x1f,
-            6 => 0x3f,
-            7 => 0x7f,
-            8 => 0xff,
-            _ => throw new ArgumentException("value must not be more than 8"),
-        };
-    }
-
     private bool IOControl(MacHALDriverIoCtl ctlCode, byte[] buffer, bool isOutBuffer = false)
     {
         return HAL.IOControl((uint)ctlCode, buffer, isOutBuffer);
     }
 
-    private bool IOControl(MacHALDriverIoCtl ctlCode, byte[] inBuffer, byte[] outBuffer, out uint bytesReturned)
+    private bool IOControl(MacHALDriverIoCtl ctlCode, byte[] inBuffer, byte[] outBuffer)
     {
-        return HAL.IOControl((uint)ctlCode, inBuffer, outBuffer, out bytesReturned);
+        return HAL.IOControl((uint)ctlCode, inBuffer, outBuffer);
     }
 }
 
@@ -404,7 +344,6 @@ internal enum SMCKeyAttributes
     Atomic = 4,
     Const = 8,
     Function = 0x10,
-    Unknown1 = 0x20,
     Write = 0x40,
     Read = 0x80,
 }
