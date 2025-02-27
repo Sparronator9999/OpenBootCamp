@@ -27,14 +27,6 @@ internal sealed class SMC : IDisposable
 
     public void Dispose() => HAL?.Dispose();
 
-    public int GetKeyCount()
-    {
-        byte[] inBuffer = GetInBuffer("#KEY");
-        byte[] outBuffer = new byte[4];
-        return IOControl(MacHALDriverIoCtl.ReadKey, inBuffer, outBuffer)
-            ? BitConverter.ToInt32(ToHostOrder(outBuffer), 0) : 0;
-    }
-
     /// <summary>
     /// Gets all supported keys (SMC functions) for the current computer.
     /// </summary>
@@ -46,15 +38,19 @@ internal sealed class SMC : IDisposable
     /// </returns>
     public SMCKeyInfo[] GetSupportedKeys()
     {
-        int keyCount = GetKeyCount();
-        SMCKeyInfo[] keys = new SMCKeyInfo[keyCount];
+        if (!ReadUInt32("#KEY", out uint keyCount))
+        {
+            return null;
+        }
 
+        SMCKeyInfo[] keys = new SMCKeyInfo[keyCount];
         for (int i = 0; i < keyCount; i++)
         {
             byte[] inBuffer = BitConverter.GetBytes(i),
                 outBuffer = new byte[5];
 
-            if (IOControl(MacHALDriverIoCtl.GetKeyByIndex, ToHostOrder(inBuffer), outBuffer))
+            // why is this the only ioctl that expects a little-endian value
+            if (IOControl(MacHALDriverIoCtl.GetKeyByIndex, inBuffer, outBuffer))
             {
                 string key = Encoding.UTF8.GetString(outBuffer, 0, 4);
                 keys[i] = GetKeyInfo(key);

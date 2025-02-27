@@ -274,7 +274,7 @@ internal sealed class FanController : IDisposable
         return SMC.WriteFPE2($"F{fan}Tg", speed);
     }
 
-    private class Fan
+    private sealed class Fan
     {
         internal string Name;
         internal float MinSpeed;
