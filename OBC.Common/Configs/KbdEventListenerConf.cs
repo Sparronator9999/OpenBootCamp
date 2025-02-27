@@ -1,6 +1,6 @@
 using System.Xml.Serialization;
 
-namespace OBC.Config;
+namespace OBC.Common.Configs;
 
 /// <summary>
 /// Represents a configuration for OBC's Keyboard Event Listener module.

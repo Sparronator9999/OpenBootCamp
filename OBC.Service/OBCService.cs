@@ -15,7 +15,7 @@
 // OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
 
 using OBC.Common;
-using OBC.Config;
+using OBC.Common.Configs;
 using OBC.Service.Logs;
 using OBC.Service.Modules;
 using System;

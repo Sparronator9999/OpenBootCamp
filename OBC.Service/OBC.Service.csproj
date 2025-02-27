@@ -34,7 +34,6 @@
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\OBC.Common\OBC.Common.csproj" />
-      <ProjectReference Include="..\OBC.Config\OBC.Config.csproj" />
       <ProjectReference Include="..\OBC.InstallManager\OBC.InstallManager.csproj" />
       <ProjectReference Include="..\OBC.IPC\OBC.IPC.csproj" />
       <ProjectReference Include="..\OBC.Overlays\OBC.Overlays.csproj" />

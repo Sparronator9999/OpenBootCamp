@@ -17,7 +17,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace OBC.Config;
+namespace OBC.Common.Configs;
 
 /// <summary>
 /// The exception thrown when an invalid <see cref="YAMDCC_Config"/> is loaded.

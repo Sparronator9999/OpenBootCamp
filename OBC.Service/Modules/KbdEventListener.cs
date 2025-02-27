@@ -15,7 +15,7 @@
 // OpenBootCamp. If not, see <https://www.gnu.org/licenses/>.
 
 using OBC.Common;
-using OBC.Config;
+using OBC.Common.Configs;
 using OBC.IPC;
 using OBC.Service.Logs;
 using System;
@@ -75,8 +75,6 @@ internal sealed class KbdEventListener : IDisposable
     private Thread ListenerTask;
 
     private bool Disposed;
-
-    private byte DispBright;
 
     private readonly AppleKbdDriver KeyMagic = new("AppleKeyboard");
     private readonly AppleKbdDriver KeyAgent = new("KeyAgent");
@@ -243,8 +241,6 @@ internal sealed class KbdEventListener : IDisposable
 
     private void HandleEvents()
     {
-        DispBright = (byte)(GetBrightness() * 15 / 100);
-
         if (Config.KeyLightTimeout > 0)
         {
             IdleTimer.Interval = Config.KeyLightTimeout * 1000;
@@ -268,32 +264,34 @@ internal sealed class KbdEventListener : IDisposable
                     }
                     break;
                 case 3:     // display brightness up
-                    if (DispBright + 1 > 15)
+                    int brightness = (byte)(GetBrightness() * 15 / 100);
+                    if (brightness + 1 > 15)
                     {
-                        DispBright = 15;
+                        brightness = 15;
                     }
                     else
                     {
-                        DispBright++;
+                        brightness++;
                     }
-                    int brightnessPercent = (int)(DispBright / 15f * 100);
+                    int bPercent = (int)(brightness / 15f * 100);
                     IPCServer?.PushMessage(new ObcEvent(
-                        ObcEventType.DispBright, brightnessPercent));
-                    SetBrightness(brightnessPercent);
+                        ObcEventType.DispBright, bPercent));
+                    SetBrightness(bPercent);
                     break;
                 case 4:     // display brightness down
-                    if (DispBright - 1 < 0)
+                    brightness = (byte)(GetBrightness() * 15 / 100);
+                    if (brightness - 1 < 0)
                     {
-                        DispBright = 0;
+                        brightness = 0;
                     }
                     else
                     {
-                        DispBright--;
+                        brightness--;
                     }
-                    brightnessPercent = (int)(DispBright / 15f * 100);
+                    bPercent = (int)(brightness / 15f * 100);
                     IPCServer?.PushMessage(new ObcEvent(
-                        ObcEventType.DispBright, brightnessPercent));
-                    SetBrightness(brightnessPercent);
+                        ObcEventType.DispBright, bPercent));
+                    SetBrightness(bPercent);
                     break;
                 case 7:    // keyboard light up
                     if (Config.KeyLightBright + Config.KeyLightBrightStep > 255)

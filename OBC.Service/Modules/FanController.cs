@@ -1,5 +1,5 @@
 using OBC.Common;
-using OBC.Config;
+using OBC.Common.Configs;
 using OBC.Service.Logs;
 using System;
 using System.Text;

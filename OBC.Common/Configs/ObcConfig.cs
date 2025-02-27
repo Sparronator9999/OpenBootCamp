@@ -18,7 +18,7 @@ using System;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace OBC.Config;
+namespace OBC.Common.Configs;
 
 public sealed class ObcConfig
 {

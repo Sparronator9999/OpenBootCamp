@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Xml.Serialization;
 
-namespace OBC.Config;
+namespace OBC.Common.Configs;
 
 /// <summary>
 /// Represents a configuration for OBC's Fan Control module.
