@@ -82,7 +82,7 @@ internal sealed class Logger : IDisposable
     /// </param>
     public void Debug(string msg, string module = null)
     {
-        LogFile(msg, module, LogLevel.DEBUG);
+        LogFile(msg, module, LogLevel.Debug);
     }
 
     /// <summary>
@@ -96,7 +96,7 @@ internal sealed class Logger : IDisposable
     /// </param>
     public void Info(string msg, string module = null)
     {
-        LogFile(msg, module, LogLevel.INFO);
+        LogFile(msg, module, LogLevel.Info);
     }
 
     /// <summary>
@@ -110,7 +110,7 @@ internal sealed class Logger : IDisposable
     /// </param>
     public void Warn(string msg, string module = null)
     {
-        LogFile(msg, module, LogLevel.WARN);
+        LogFile(msg, module, LogLevel.Warn);
     }
 
     /// <summary>
@@ -124,7 +124,7 @@ internal sealed class Logger : IDisposable
     /// </param>
     public void Error(string msg, string module = null)
     {
-        LogFile(msg, module, LogLevel.ERROR);
+        LogFile(msg, module, LogLevel.Error);
     }
 
     /// <summary>
@@ -139,7 +139,7 @@ internal sealed class Logger : IDisposable
     /// </param>
     public void Fatal(string msg, string module = null)
     {
-        LogFile(msg, module, LogLevel.FATAL);
+        LogFile(msg, module, LogLevel.Fatal);
     }
 
     private void LogFile(string msg, string module, LogLevel level)
@@ -158,7 +158,7 @@ internal sealed class Logger : IDisposable
         {
             foreach (string str in msg.Split(NewLine, StringSplitOptions.RemoveEmptyEntries))
             {
-                LogWriter.WriteLine($"[{DateTime.Now:dd/MM/yyyy HH:mm:ss.fff}] {$"[{level}]",-8}{(module is null ? "" : $"[{module}] ")}{str}");
+                LogWriter.WriteLine($"[{DateTime.Now:dd/MM/yyyy HH:mm:ss.fff}] {$"[{level}]".ToUpperInvariant(),-8}{(module is null ? "" : $"[{module}] ")}{str}");
             }
         }
     }

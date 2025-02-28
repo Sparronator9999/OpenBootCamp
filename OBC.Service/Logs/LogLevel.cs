@@ -24,30 +24,30 @@ internal enum LogLevel
     /// <summary>
     /// Do not log anything.
     /// </summary>
-    NONE,
+    None,
 
     /// <summary>
     /// Only log Fatal events.
     /// </summary>
-    FATAL,
+    Fatal,
 
     /// <summary>
     /// Log Errors and Fatal events.
     /// </summary>
-    ERROR,
+    Error,
 
     /// <summary>
     /// Log Warnings, Errors, and Fatal events.
     /// </summary>
-    WARN,
+    Warn,
 
     /// <summary>
     /// Log all events, except for Debug events.
     /// </summary>
-    INFO,
+    Info,
 
     /// <summary>
     /// Log all events.
     /// </summary>
-    DEBUG,
+    Debug,
 }

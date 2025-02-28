@@ -111,21 +111,15 @@ internal sealed class KbdEventListener : IDisposable
     {
         ThrowIfDisposed();
 
-        if (ListenerTask is not null)
-        {
-            throw new InvalidOperationException(
-                "The keyboard event listener is already running.");
-        }
-
         if (KeyMagic.Open())
         {
-            Log.Info("Setting OSXFnBehavior from config file (obc.xml)...", nameof(KbdEventListener));
+            Log.Info(Strings.GetString("kbdFnSet"), nameof(KbdEventListener));
 
             int value = Config.OSXFnBehaviour ? 1 : 0;
 
             if (!KeyMagic.IOControl(AppleKbdIoCtl.SetOSXFnBehaviour, ref value))
             {
-                Log.Error("Failed to set OSXFnBehavior!", nameof(KbdEventListener));
+                Log.Error(Strings.GetString("errFnSet"), nameof(KbdEventListener));
                 Log.Error(Strings.GetString("errIoCtl",
                     Utils.GetWin32ErrMsg(KeyMagic.ErrorCode)), nameof(KbdEventListener));
             }
@@ -241,101 +235,109 @@ internal sealed class KbdEventListener : IDisposable
 
     private void HandleEvents()
     {
-        if (Config.KeyLightTimeout > 0)
+        try
         {
-            IdleTimer.Interval = Config.KeyLightTimeout * 1000;
-        }
-        else
-        {
-            SetKbdBrightness(Config.KeyLightBright);
-        }
-
-        Log.Info("Started listening for events.", nameof(KbdEventListener));
-        while (true)
-        {
-            int eventID = WaitHandle.WaitAny(Events);
-            switch (eventID)
+            if (Config.KeyLightTimeout > 0)
             {
-                case 0:     // eject optical drive
-                    IPCServer?.PushMessage(new ObcEvent(ObcEventType.Eject));
-                    if (!EjectOpticalDrive())
-                    {
-                        Log.Error(Strings.GetString("errCDEject"), nameof(KbdEventListener));
-                    }
-                    break;
-                case 3:     // display brightness up
-                    int brightness = (byte)(GetBrightness() * 15 / 100);
-                    if (brightness + 1 > 15)
-                    {
-                        brightness = 15;
-                    }
-                    else
-                    {
-                        brightness++;
-                    }
-                    int bPercent = (int)(brightness / 15f * 100);
-                    IPCServer?.PushMessage(new ObcEvent(
-                        ObcEventType.DispBright, bPercent));
-                    SetBrightness(bPercent);
-                    break;
-                case 4:     // display brightness down
-                    brightness = (byte)(GetBrightness() * 15 / 100);
-                    if (brightness - 1 < 0)
-                    {
-                        brightness = 0;
-                    }
-                    else
-                    {
-                        brightness--;
-                    }
-                    bPercent = (int)(brightness / 15f * 100);
-                    IPCServer?.PushMessage(new ObcEvent(
-                        ObcEventType.DispBright, bPercent));
-                    SetBrightness(bPercent);
-                    break;
-                case 7:    // keyboard light up
-                    if (Config.KeyLightBright + Config.KeyLightBrightStep > 255)
-                    {
-                        Config.KeyLightBright = 255;
-                    }
-                    else
-                    {
-                        Config.KeyLightBright += Config.KeyLightBrightStep;
-                    }
-                    SetKbdBrightness(Config.KeyLightBright);
-                    IPCServer?.PushMessage(new ObcEvent(
-                        ObcEventType.KeyLightBright, Config.KeyLightBright * 100 / 255));
-                    break;
-                case 8:    // keyboard light down
-                    if (Config.KeyLightBright - Config.KeyLightBrightStep < 0)
-                    {
-                        Config.KeyLightBright = 0;
-                    }
-                    else
-                    {
-                        Config.KeyLightBright -= Config.KeyLightBrightStep;
-                    }
-                    SetKbdBrightness(Config.KeyLightBright);
-                    IPCServer?.PushMessage(new ObcEvent(
-                        ObcEventType.KeyLightBright, Config.KeyLightBright * 100 / 255));
-                    break;
-                case 19:    // keyboard presence detected
-                    if (Config.KeyLightTimeout > 0 && SMC is not null)
-                    {
-                        IdleTimer.Stop();
-                        SetKbdBrightness(Config.KeyLightBright);
-                        IdleTimer.Start();
-                    }
-                    break;
-                case EVENT_COUNT:   // shut down listener - signalled by Stop()
-                    Log.Info("Stopping event listener...", nameof(KbdEventListener));
-                    return;
-                case WaitHandle.WaitTimeout:
-                    break;
-                default:
-                    Log.Warn(Strings.GetString("warnBadEvent"), nameof(KbdEventListener));
-                    break;
+                IdleTimer.Interval = Config.KeyLightTimeout * 1000;
             }
+            else
+            {
+                SetKbdBrightness(Config.KeyLightBright);
+            }
+
+            Log.Info(Strings.GetString("kbdStarted"), nameof(KbdEventListener));
+            while (true)
+            {
+                int eventID = WaitHandle.WaitAny(Events);
+                switch (eventID)
+                {
+                    case 0:     // eject optical drive
+                        IPCServer?.PushMessage(new ObcEvent(ObcEventType.Eject));
+                        if (!EjectOpticalDrive())
+                        {
+                            Log.Error(Strings.GetString("errCDEject"), nameof(KbdEventListener));
+                        }
+                        break;
+                    case 3:     // display brightness up
+                        int brightness = (byte)(GetBrightness() * 15 / 100);
+                        if (brightness + 1 > 15)
+                        {
+                            brightness = 15;
+                        }
+                        else
+                        {
+                            brightness++;
+                        }
+                        int bPercent = (int)(brightness / 15f * 100);
+                        IPCServer?.PushMessage(new ObcEvent(
+                            ObcEventType.DispBright, bPercent));
+                        SetBrightness(bPercent);
+                        break;
+                    case 4:     // display brightness down
+                        brightness = (byte)(GetBrightness() * 15 / 100);
+                        if (brightness - 1 < 0)
+                        {
+                            brightness = 0;
+                        }
+                        else
+                        {
+                            brightness--;
+                        }
+                        bPercent = (int)(brightness / 15f * 100);
+                        IPCServer?.PushMessage(new ObcEvent(
+                            ObcEventType.DispBright, bPercent));
+                        SetBrightness(bPercent);
+                        break;
+                    case 7:    // keyboard light up
+                        if (Config.KeyLightBright + Config.KeyLightBrightStep > 255)
+                        {
+                            Config.KeyLightBright = 255;
+                        }
+                        else
+                        {
+                            Config.KeyLightBright += Config.KeyLightBrightStep;
+                        }
+                        SetKbdBrightness(Config.KeyLightBright);
+                        IPCServer?.PushMessage(new ObcEvent(
+                            ObcEventType.KeyLightBright, Config.KeyLightBright * 100 / 255));
+                        break;
+                    case 8:    // keyboard light down
+                        if (Config.KeyLightBright - Config.KeyLightBrightStep < 0)
+                        {
+                            Config.KeyLightBright = 0;
+                        }
+                        else
+                        {
+                            Config.KeyLightBright -= Config.KeyLightBrightStep;
+                        }
+                        SetKbdBrightness(Config.KeyLightBright);
+                        IPCServer?.PushMessage(new ObcEvent(
+                            ObcEventType.KeyLightBright, Config.KeyLightBright * 100 / 255));
+                        break;
+                    case 19:    // keyboard presence detected
+                        if (Config.KeyLightTimeout > 0 && SMC is not null)
+                        {
+                            IdleTimer.Stop();
+                            SetKbdBrightness(Config.KeyLightBright);
+                            IdleTimer.Start();
+                        }
+                        break;
+                    case EVENT_COUNT:   // shut down listener - signalled by Stop()
+                        Log.Info("Stopping event listener...", nameof(KbdEventListener));
+                        return;
+                    case WaitHandle.WaitTimeout:
+                        break;
+                    default:
+                        Log.Warn(Strings.GetString("warnBadEvent"), nameof(KbdEventListener));
+                        break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(Strings.GetString("svcBgException", ex), nameof(KbdEventListener));
+            Stop();
         }
     }
 

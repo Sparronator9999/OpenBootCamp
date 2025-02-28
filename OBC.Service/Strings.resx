@@ -136,6 +136,9 @@ Please run this service from 'InstallMgr' (should be in the same folder as this 
     <value>DeviceIoControl failed for event {0}with error {1}:
 {2}</value>
   </data>
+  <data name="errFnSet" xml:space="preserve">
+    <value>Failed to set OSXFnBehavior!</value>
+  </data>
   <data name="errIoCtl" xml:space="preserve">
     <value>DeviceIoControl failed: {0}</value>
   </data>
@@ -154,6 +157,12 @@ SMC functions (including keyboard backlight adjustment) will be unavailable!</va
   <data name="kbdBrightSet" xml:space="preserve">
     <value>Setting keyboard backlight to {0}...</value>
   </data>
+  <data name="kbdFnSet" xml:space="preserve">
+    <value>Setting OSXFnBehavior from config file (obc.xml)...</value>
+  </data>
+  <data name="kbdStarted" xml:space="preserve">
+    <value>Started listening for events.</value>
+  </data>
   <data name="svcConfLoaded" xml:space="preserve">
     <value>Loaded the OpenBootCamp config successfully!</value>
   </data>
@@ -169,8 +178,9 @@ For more information on OBC, visit https://github.com/Sparronator9999/OpenBootCa
     <value>Unhandled exception occurred: {0}
 The service will now stop.</value>
   </data>
-  <data name="svcKELException" xml:space="preserve">
-    <value>Unhandled exception occurred in Keyboard Event Listener: {0}</value>
+  <data name="svcBgException" xml:space="preserve">
+    <value>Unhandled exception occurred in background thread:
+{0}</value>
   </data>
   <data name="svcStarted" xml:space="preserve">
     <value>Started the OpenBootCamp service.</value>
@@ -186,7 +196,7 @@ The service will now stop.</value>
   </data>
   <data name="svcVer" xml:space="preserve">
     <value>~~~~~ OpenBootCamp Service ~~~~~
-Copyright © 2024 Sparronator9999
+Copyright © 2024-2025 Sparronator9999
 OS version: {0}</value>
   </data>
   <data name="warnBadEvent" xml:space="preserve">

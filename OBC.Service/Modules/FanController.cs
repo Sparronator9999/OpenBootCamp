@@ -38,11 +38,6 @@ internal sealed class FanController : IDisposable
 
     public void Start()
     {
-        if (PollTimer is not null)
-        {
-            throw new InvalidOperationException("The fan controller is already running.");
-        }
-
         Log.Info("Getting fan information...", nameof(FanController));
         int fanCount = GetFanCount();
         if (fanCount == -1)
@@ -213,7 +208,7 @@ internal sealed class FanController : IDisposable
         }
         catch (Exception ex)
         {
-            Log.Error($"Unhandled exception occurred in FanController background thread:\n{ex}", nameof(FanController));
+            Log.Error(Strings.GetString("svcBgException", ex), nameof(FanController));
             ResetFanCtrl();
             PollTimer.Stop();
         }
