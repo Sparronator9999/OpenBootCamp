@@ -162,7 +162,7 @@ public partial class MainForm : Form
 
         fgPen?.Dispose();
         fgBrush?.Dispose();
-        fgPen = new Pen(fgColor, 6);
+        fgPen = new Pen(fgColor, 5 * DpiScale);
         fgBrush = new SolidBrush(fgColor);
 
         User32.SetBlur(Handle, BlurEnabled);
@@ -232,17 +232,17 @@ public partial class MainForm : Form
                 break;
             case ObcEventType.DispBright:
                 int sunX = 48, sunY = 34;
-                g.DrawEllipse(fgPen, sunX + 38, sunY + 38, 20, 20, DpiScale);
-                g.DrawLine(fgPen, sunX + 82, sunY + 14, sunX + 62, sunY + 34, DpiScale);    // top-right
-                g.DrawLine(fgPen, sunX + 82, sunY + 82, sunX + 62, sunY + 62, DpiScale);    // bottom-right
-                g.DrawLine(fgPen, sunX + 14, sunY + 82, sunX + 34, sunY + 62, DpiScale);    // bottom-left
-                g.DrawLine(fgPen, sunX + 14, sunY + 14, sunX + 34, sunY + 34, DpiScale);    // top-left
+                g.DrawEllipse(fgPen, sunX + 36, sunY + 36, 24, 24, DpiScale);
+                g.DrawLine(fgPen, sunX + 79, sunY + 17, sunX + 65, sunY + 31, DpiScale);    // top-right
+                g.DrawLine(fgPen, sunX + 79, sunY + 79, sunX + 65, sunY + 65, DpiScale);    // bottom-right
+                g.DrawLine(fgPen, sunX + 17, sunY + 79, sunX + 31, sunY + 65, DpiScale);    // bottom-left
+                g.DrawLine(fgPen, sunX + 17, sunY + 17, sunX + 31, sunY + 31, DpiScale);    // top-left
 
                 g.SmoothingMode = SmoothingMode.None;
-                g.DrawLine(fgPen, sunX + 48, sunY, sunX + 48, sunY + 28, DpiScale);         // top
-                g.DrawLine(fgPen, sunX + 68, sunY + 48, sunX + 96, sunY + 48, DpiScale);    // right
-                g.DrawLine(fgPen, sunX + 48, sunY + 68, sunX + 48, sunY + 96, DpiScale);    // bottom
-                g.DrawLine(fgPen, sunX, sunY + 48, sunX + 28, sunY + 48, DpiScale);         // left
+                g.DrawLine(fgPen, sunX + 48, sunY + 4,  sunX + 48, sunY + 24, DpiScale);    // top
+                g.DrawLine(fgPen, sunX + 72, sunY + 48, sunX + 92, sunY + 48, DpiScale);    // right
+                g.DrawLine(fgPen, sunX + 48, sunY + 72, sunX + 48, sunY + 92, DpiScale);    // bottom
+                g.DrawLine(fgPen, sunX + 4,  sunY + 48, sunX + 24, sunY + 48, DpiScale);    // left
                 break;
             case ObcEventType.KeyLightBright:
                 if (Value > 0)
