@@ -260,7 +260,7 @@ internal sealed class KbdEventListener : IDisposable
                         }
                         break;
                     case 3:     // display brightness up
-                        int brightness = (byte)(GetBrightness() * 15 / 100);
+                        byte brightness = (byte)((GetBrightness() + 0.5f) * 15f / 100f);
                         if (brightness + 1 > 15)
                         {
                             brightness = 15;
@@ -269,13 +269,13 @@ internal sealed class KbdEventListener : IDisposable
                         {
                             brightness++;
                         }
-                        int bPercent = (int)(brightness / 15f * 100);
+                        byte bPercent = (byte)(brightness * 100 / 15);
                         IPCServer?.PushMessage(new ObcEvent(
                             ObcEventType.DispBright, bPercent));
                         SetBrightness(bPercent);
                         break;
                     case 4:     // display brightness down
-                        brightness = (byte)(GetBrightness() * 15 / 100);
+                        brightness = (byte)((GetBrightness() + 0.5f) * 15f / 100f);
                         if (brightness - 1 < 0)
                         {
                             brightness = 0;
@@ -284,7 +284,7 @@ internal sealed class KbdEventListener : IDisposable
                         {
                             brightness--;
                         }
-                        bPercent = (int)(brightness / 15f * 100);
+                        bPercent = (byte)(brightness * 100 / 15);
                         IPCServer?.PushMessage(new ObcEvent(
                             ObcEventType.DispBright, bPercent));
                         SetBrightness(bPercent);
@@ -428,7 +428,7 @@ internal sealed class KbdEventListener : IDisposable
         return false;
     }
 
-    private static int GetBrightness()
+    private static byte GetBrightness()
     {
         using (ManagementClass mclass = new("WmiMonitorBrightness")
         {
@@ -444,7 +444,7 @@ internal sealed class KbdEventListener : IDisposable
         }
     }
 
-    private static void SetBrightness(int brightness)
+    private static void SetBrightness(byte brightness)
     {
         using (ManagementClass mclass = new("WmiMonitorBrightnessMethods")
         {
