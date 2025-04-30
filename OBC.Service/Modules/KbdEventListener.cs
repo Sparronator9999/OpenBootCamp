@@ -357,7 +357,15 @@ internal sealed class KbdEventListener : IDisposable
                 if (i < KbdEventIOCtls.Length)
                 {
                     // only dangerous release
-                    Events[i].SafeWaitHandle.DangerousRelease();
+                    try
+                    {
+                        Events[i].SafeWaitHandle.DangerousRelease();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warn(
+                            $"Failed to DangerousRelease key event #{i}: {ex.GetType()}: {ex.Message}");
+                    }
                 }
                 Events[i].Dispose();
             }
