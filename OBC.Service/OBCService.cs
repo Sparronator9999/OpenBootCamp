@@ -22,6 +22,7 @@ using System;
 using System.IO;
 using System.ServiceProcess;
 using System.Text;
+using System.Timers;
 
 namespace OBC.Service;
 
@@ -30,6 +31,12 @@ internal sealed class OBCService : ServiceBase
     private readonly Logger Log;
 
     private readonly SMC SMC = new("MacHALDriver");
+
+    private SMCKeyInfo[] SupportedSMCKeys;
+    private readonly Timer KeyDumpTimer = new()
+    {
+        AutoReset = false,
+    };
 
     private KbdEventListener Listener;
     private FanController FanController;
@@ -44,6 +51,7 @@ internal sealed class OBCService : ServiceBase
         CanHandlePowerEvent = true;
         CanShutdown = true;
         Log = logger;
+        KeyDumpTimer.Elapsed += KeyDumpTimer_Elapsed;
     }
 
     protected override void OnStart(string[] args)
@@ -59,39 +67,25 @@ internal sealed class OBCService : ServiceBase
         }
         else
         {
-            SMCKeyInfo[] keys = SMC.GetSupportedKeys();
-            if (keys is null || keys.Length == 0)
+            SupportedSMCKeys = SMC.GetSupportedKeys();
+            if (SupportedSMCKeys is null || SupportedSMCKeys.Length == 0)
             {
                 Log.Error(
                     "Failed to get supported SMC keys:\n" +
                     $"{Utils.GetWin32ErrMsg(SMC.ErrorCode)}");
             }
-            else if (Config.LogSMCKeys)
+            else
             {
-                Log.Debug("Supported SMC keys:");
-                for (int i = 0; i < keys.Length; i++)
+                if (Config.DumpSMCKeys.HasFlag(SMCKeyDumpType.OnSvcStart))
                 {
-                    StringBuilder sb = new($"{i:X4}");
-
-                    sb.Append($": {keys[i].Key}, len = 0x{keys[i].Length:X2}, type = {keys[i].TypeString}, attr = {keys[i].Attributes}");
-                    if (Config.LogSMCKeyData && (keys[i].Attributes & SMCKeyAttributes.Read) == SMCKeyAttributes.Read)
-                    {
-                        sb.Append($", data = ");
-                        if (SMC.ReadRawData(keys[i].Key, keys[i].Length, out byte[] data))
-                        {
-                            for (int j = 0; j < data.Length; j++)
-                            {
-                                sb.Append($"{data[j]:X2} ");
+                    DumpSMCKeys(SupportedSMCKeys);
                             }
-                        }
-                        else
+                if (Config.DumpSMCKeys.HasFlag(SMCKeyDumpType.OnSvcStartDelayed))
                         {
-                            sb.Append("null");
+                    KeyDumpTimer.Interval = Config.KeyDumpDelayTime;
+                    KeyDumpTimer.Start();
                         }
                     }
-                    Log.Debug(sb.ToString());
-                }
-            }
         }
 
         if (Config.KbdEventListener.Enabled)
@@ -124,6 +118,12 @@ internal sealed class OBCService : ServiceBase
         Listener?.Stop();
         FanController?.Stop();
 
+        KeyDumpTimer.Stop();
+        if (Config.DumpSMCKeys.HasFlag(SMCKeyDumpType.OnSvcStop))
+        {
+            DumpSMCKeys(SupportedSMCKeys);
+        }
+
         Log.Info("Saving config...");
         Config.Save(ConfPath);
 
@@ -139,12 +139,25 @@ internal sealed class OBCService : ServiceBase
             case PowerBroadcastStatus.ResumeCritical:
             case PowerBroadcastStatus.ResumeSuspend:
             case PowerBroadcastStatus.ResumeAutomatic:
+                if (Config.DumpSMCKeys.HasFlag(SMCKeyDumpType.OnWake))
+                {
+                    DumpSMCKeys(SupportedSMCKeys);
+                }
+                if (Config.DumpSMCKeys.HasFlag(SMCKeyDumpType.OnWakeDelayed))
+                {
+                    KeyDumpTimer.Interval = Config.KeyDumpDelayTime;
+                    KeyDumpTimer.Start();
+                }
                 Listener?.Wake();
                 FanController?.Wake();
                 break;
             case PowerBroadcastStatus.Suspend:
                 Listener?.Sleep();
                 FanController?.Sleep();
+                if (Config.DumpSMCKeys.HasFlag(SMCKeyDumpType.OnSleep))
+                {
+                    DumpSMCKeys(SupportedSMCKeys);
+                }
                 break;
         }
         return true;
@@ -168,6 +181,46 @@ internal sealed class OBCService : ServiceBase
         {
             Log.Warn(Strings.GetString("wrnNoConf"));
             Config = new ObcConfig();
+        }
+    }
+    private void KeyDumpTimer_Elapsed(object sender, ElapsedEventArgs e)
+    {
+        DumpSMCKeys(SupportedSMCKeys);
+    }
+
+    private void DumpSMCKeys(SMCKeyInfo[] keys)
+    {
+        string path = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            "Sparronator9999", "OpenBootCamp", "SMCKeyDumps",
+            $"smckeys-{DateTime.Now.ToString("s").Replace(':', '-')}.csv");
+
+        Directory.CreateDirectory(Path.GetDirectoryName(path));
+        using (StreamWriter sw = new(path))
+        {
+            Log.Debug($"Dumping SMC keys to {path}...");
+            sw.WriteLine("Index,Key,Length,Type,Attributes,Data");
+
+            for (int i = 0; i < keys.Length; i++)
+            {
+                StringBuilder sb = new($"0x{i:X4},{keys[i].Key},0x{keys[i].Length:X2},{keys[i].TypeString},{keys[i].Attributes.ToString().Replace(',', ' ')},");
+                if ((keys[i].Attributes & SMCKeyAttributes.Read) == SMCKeyAttributes.Read)
+                {
+                    if (SMC.ReadRawData(keys[i].Key, keys[i].Length, out byte[] data))
+                    {
+                        for (int j = 0; j < data.Length; j++)
+                        {
+                            sb.Append($"{data[j]:X2} ");
+                        }
+                    }
+                    else
+                    {
+                        sb.Append("(null)");
+                    }
+                }
+                sw.WriteLine(sb.ToString());
+            }
+            Log.Debug($"Finished dumping SMC keys to {path}.");
         }
     }
 }

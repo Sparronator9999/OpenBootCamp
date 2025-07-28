@@ -36,22 +36,30 @@ public sealed class ObcConfig
     private const int ExpectedVer = 1;
 
     /// <summary>
-    /// Set to <see langword="true"/> to log the computer's supported SMC keys
-    /// on service startup. The default is <see langword="false"/>.
-    /// </summary>
-    [XmlElement]
-    public bool LogSMCKeys { get; set; }
-
-    /// <summary>
-    /// If <see cref="LogSMCKeys"/> is set to <see langword="true"/>,
-    /// also logs the initial value of all readable SMC keys if set to
-    /// <see langword="true"/>. The default is <see langword="false"/>
+    /// Dumps the value of all readable SMC keys to a text file
+    /// at the specified times (see <see cref="SMCKeyDumpType"/>).
     /// </summary>
     /// <remarks>
-    /// This option may increase the service startup time when enabled.
+    /// This option may increase the service startup
+    /// and/or shutdown time when enabled.
     /// </remarks>
     [XmlElement]
-    public bool LogSMCKeyData { get; set; }
+    public SMCKeyDumpType DumpSMCKeys { get; set; }
+
+    /// <summary>
+    /// The time, in seconds, after which
+    /// <see cref="SMCKeyDumpType.OnSvcStartDelayed"/> and
+    /// <see cref="SMCKeyDumpType.OnWakeDelayed"/> should
+    /// dump SMC keys.
+    /// </summary>
+    /// <remarks>
+    /// This value has no effect if <see cref="DumpSMCKeys"/>
+    /// is set to any value that doesn't include
+    /// <see cref="SMCKeyDumpType.OnSvcStartDelayed"/> or
+    /// <see cref="SMCKeyDumpType.OnWakeDelayed"/>.
+    /// </remarks>
+    [XmlElement]
+    public int KeyDumpDelayTime { get; set; } = 60;
 
     /// <summary>
     /// Configuration settings for the OBC Service's Keyboard Event Listener module.
@@ -130,4 +138,48 @@ public sealed class ObcConfig
         // All other values are considered to be valid; return true
         return true;
     }
+}
+
+[Flags]
+public enum SMCKeyDumpType
+{
+    /// <summary>
+    /// Don't dump SMC keys or data.
+    /// </summary>
+    /// <remarks>
+    /// If unsure, use this setting.
+    /// </remarks>
+    Never = 0,
+    /// <summary>
+    /// Dump SMC keys during service startup.
+    /// </summary>
+    /// <remarks>
+    /// May increase service startup time.
+    /// </remarks>
+    OnSvcStart = 1,
+    /// <summary>
+    /// Dump SMC keys <see cref="ObcConfig.KeyDumpDelayTime"/>
+    /// seconds after service start.
+    /// </summary>
+    OnSvcStartDelayed = 2,
+    /// <summary>
+    /// Dump SMC keys during service shutdown.
+    /// </summary>
+    /// <remarks>
+    /// May increase service shutdown time.
+    /// </remarks>
+    OnSvcStop = 4,
+    /// <summary>
+    /// Dump SMC keys just before system sleep.
+    /// </summary>
+    OnSleep = 8,
+    /// <summary>
+    /// Dump SMC keys just after system wake.
+    /// </summary>
+    OnWake = 0x10,
+    /// <summary>
+    /// Dump SMC keys <see cref="ObcConfig.KeyDumpDelayTime"/>
+    /// seconds after system wake.
+    /// </summary>
+    OnWakeDelayed = 0x20,
 }
