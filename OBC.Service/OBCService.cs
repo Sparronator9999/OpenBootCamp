@@ -38,9 +38,7 @@ internal sealed class OBCService : ServiceBase
         AutoReset = false,
     };
 
-    private KbdEventListener Listener;
-    private FanController FanController;
-    private BattManager BattManager;
+    private IObcModule[] Modules;
 
     private ObcConfig Config;
     private readonly string ConfPath = Path.Combine(
@@ -89,22 +87,15 @@ internal sealed class OBCService : ServiceBase
             }
         }
 
-        if (Config.KbdEventListener.Enabled)
+        Modules =
+        [
+            new KbdEventListener(Config.KbdEventListener, Log, SMC),
+            new FanController(Config.FanControl, Log, SMC),
+            new BattManager(Config.BatteryManager, Log, SMC),
+        ];
+        foreach (IObcModule mod in Modules)
         {
-            Listener = new(Config.KbdEventListener, Log, SMC);
-            Listener.Start();
-        }
-
-        if (Config.FanControl.Enabled && SMC.IsOpen)
-        {
-            FanController = new(Config.FanControl, Log, SMC);
-            FanController.Start();
-        }
-
-        if (Config.BatteryManager.Enabled && SMC.IsOpen)
-        {
-            BattManager = new(Config.BatteryManager, Log, SMC);
-            BattManager.Start();
+            mod.Start();
         }
         Log.Info(Strings.GetString("svcStarted"));
     }
@@ -122,9 +113,10 @@ internal sealed class OBCService : ServiceBase
     private void StopService()
     {
         Log.Info(Strings.GetString("svcStopping"));
-        Listener?.Stop();
-        FanController?.Stop();
-        //BattManager?.Stop();
+        foreach (IObcModule mod in Modules)
+        {
+            mod?.Stop();
+        }
 
         KeyDumpTimer.Stop();
         if (Config.DumpSMCKeys.HasFlag(SMCKeyDumpType.OnSvcStop))
@@ -156,14 +148,20 @@ internal sealed class OBCService : ServiceBase
                     KeyDumpTimer.Interval = Config.KeyDumpDelayTime;
                     KeyDumpTimer.Start();
                 }
-                Listener?.Wake();
-                FanController?.Wake();
-                BattManager?.Wake();
+
+                // tell all OBC modules that the system is waking up
+                foreach (IObcModule mod in Modules)
+                {
+                    mod?.Wake();
+                }
                 break;
             case PowerBroadcastStatus.Suspend:
-                Listener?.Sleep();
-                FanController?.Sleep();
-                //BattManager?.Sleep();
+                // tell all OBC modules that the system is about to enter sleep mode
+                foreach (IObcModule mod in Modules)
+                {
+                    mod?.Sleep();
+                }
+
                 if (Config.DumpSMCKeys.HasFlag(SMCKeyDumpType.OnSleep))
                 {
                     DumpSMCKeys(SupportedSMCKeys);

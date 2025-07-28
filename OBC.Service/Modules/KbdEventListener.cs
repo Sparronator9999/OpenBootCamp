@@ -28,7 +28,7 @@ using Timer = System.Timers.Timer;
 
 namespace OBC.Service.Modules;
 
-internal sealed class KbdEventListener : IDisposable
+internal sealed class KbdEventListener : IObcModule, IDisposable
 {
     private readonly KbdEventListenerConf Config;
 
@@ -109,6 +109,11 @@ internal sealed class KbdEventListener : IDisposable
 
     public void Start()
     {
+        if (!Config.Enabled)
+        {
+            return;
+        }
+
         ThrowIfDisposed();
 
         if (KeyMagic.Open())
@@ -177,6 +182,11 @@ internal sealed class KbdEventListener : IDisposable
 
     public void Stop()
     {
+        if (!Config.Enabled)
+        {
+            return;
+        }
+
         ThrowIfDisposed();
         IdleTimer.Stop();
 
@@ -195,12 +205,21 @@ internal sealed class KbdEventListener : IDisposable
 
     public void Sleep()
     {
+        if (!Config.Enabled)
+        {
+            return;
+        }
+
         ThrowIfDisposed();
         SetKbdBrightness(0);
     }
 
     public void Wake()
     {
+        if (!Config.Enabled)
+        {
+            return;
+        }
         ThrowIfDisposed();
 
         // turn on keyboard backlight if timeout is disabled.

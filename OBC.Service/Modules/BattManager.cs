@@ -19,7 +19,7 @@ using OBC.Service.Logs;
 
 namespace OBC.Service.Modules;
 
-internal sealed class BattManager
+internal sealed class BattManager : IObcModule
 {
     private readonly BattManConf Config;
     private readonly Logger Log;
@@ -41,22 +41,28 @@ internal sealed class BattManager
         // Maybe that applies to the Apple Silicon laptops?)
         // I'm still putting this in a separate module since I might implement
         // extra features like auto-calibration, as well as workarounds/fixes if needed.
-        Log.Info($"Setting battery charge limit to {Config.ChargeLimit}%...", nameof(BattManager));
-        SMC.WriteUInt8("BCLM", Config.ChargeLimit);
+        if (Config.Enabled && SMC.IsOpen)
+        {
+            Log.Info($"Setting battery charge limit to {Config.ChargeLimit}%...", nameof(BattManager));
+            SMC.WriteUInt8("BCLM", Config.ChargeLimit);
+        }
     }
 
-    //public void Stop()
-    //{
-    //}
+    public void Stop()
+    {
+    }
 
     public void Wake()
     {
         // see Start() method
-        Log.Info($"Setting battery charge limit to {Config.ChargeLimit}%...", nameof(BattManager));
-        SMC.WriteUInt8("BCLM", Config.ChargeLimit);
+        if (Config.Enabled && SMC.IsOpen)
+        {
+            Log.Info($"Setting battery charge limit to {Config.ChargeLimit}%...", nameof(BattManager));
+            SMC.WriteUInt8("BCLM", Config.ChargeLimit);
+        }
     }
 
-    //public static void Sleep()
-    //{
-    //}
+    public void Sleep()
+    {
+    }
 }

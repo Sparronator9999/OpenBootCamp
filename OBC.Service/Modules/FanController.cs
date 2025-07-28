@@ -24,7 +24,7 @@ using Timer = System.Timers.Timer;
 
 namespace OBC.Service.Modules;
 
-internal sealed class FanController : IDisposable
+internal sealed class FanController : IObcModule, IDisposable
 {
     private readonly FanControlConf Config;
     private readonly Logger Log;
@@ -54,6 +54,11 @@ internal sealed class FanController : IDisposable
 
     public void Start()
     {
+        if (!Config.Enabled || !SMC.IsOpen)
+        {
+            return;
+        }
+
         Log.Info("Getting fan information...", nameof(FanController));
         int fanCount = GetFanCount();
         if (fanCount == -1)
@@ -118,7 +123,7 @@ internal sealed class FanController : IDisposable
 
     public void Stop()
     {
-        if (PollTimer is null)
+        if (PollTimer is null || !Config.Enabled || !SMC.IsOpen)
         {
             return;
         }
@@ -135,6 +140,11 @@ internal sealed class FanController : IDisposable
 
     public void Wake()
     {
+        if (!Config.Enabled || !SMC.IsOpen)
+        {
+            return;
+        }
+
         short ctrlBits = 0;
         for (int i = 0; i < Config.FanConfs.Count; i++)
         {
@@ -154,6 +164,11 @@ internal sealed class FanController : IDisposable
 
     public void Sleep()
     {
+        if (!Config.Enabled || !SMC.IsOpen)
+        {
+            return;
+        }
+
         ResetFanCtrl();
         PollTimer?.Stop();
     }
