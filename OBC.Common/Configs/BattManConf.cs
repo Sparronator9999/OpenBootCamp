@@ -40,6 +40,7 @@ public sealed class BattManConf
     /// <remarks>
     /// <para>The default value is 80%.</para>
     /// <para>Recommended values are between 60% and 100%.</para>
+    /// <para>Set to 100% to disable charge limit.</para>
     /// </remarks>
     [XmlElement]
     public byte ChargeLimit { get; set; } = 80;

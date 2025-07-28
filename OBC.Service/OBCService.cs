@@ -81,7 +81,7 @@ internal sealed class OBCService : ServiceBase
                 }
                 if (Config.DumpSMCKeys.HasFlag(SMCKeyDumpType.OnSvcStartDelayed))
                 {
-                    KeyDumpTimer.Interval = Config.KeyDumpDelayTime;
+                    KeyDumpTimer.Interval = Config.KeyDumpDelayTime * 1000;
                     KeyDumpTimer.Start();
                 }
             }
@@ -211,7 +211,7 @@ internal sealed class OBCService : ServiceBase
 
             for (int i = 0; i < keys.Length; i++)
             {
-                StringBuilder sb = new($"0x{i:X4},{keys[i].Key},0x{keys[i].Length:X2},{keys[i].TypeString},{keys[i].Attributes.ToString().Replace(',', ' ')},");
+                StringBuilder sb = new($"0x{i:X4},{keys[i].Key},0x{keys[i].Length:X2},{keys[i].TypeString},{keys[i].Attributes.ToString().Replace(",", "")},");
                 if ((keys[i].Attributes & SMCKeyAttributes.Read) == SMCKeyAttributes.Read)
                 {
                     if (SMC.ReadRawData(keys[i].Key, keys[i].Length, out byte[] data))
