@@ -68,8 +68,7 @@ public sealed class ObcConfig
     /// Must not be <see langword="null"/>.
     /// </remarks>
     [XmlElement]
-    public KbdEventListenerConf KbdEventListener { get; set; } =
-        new KbdEventListenerConf();
+    public KbdEventListenerConf KbdEventListener { get; set; } = new KbdEventListenerConf();
 
     /// <summary>
     /// Configuration settings for the OBC Service's Fan Control module.
@@ -78,8 +77,16 @@ public sealed class ObcConfig
     /// Must not be <see langword="null"/>.
     /// </remarks>
     [XmlElement]
-    public FanControlConf FanControl { get; set; }
-        = new FanControlConf();
+    public FanControlConf FanControl { get; set; } = new FanControlConf();
+
+    /// <summary>
+    /// Configuration settings for the OBC Service's Battery Manager module.
+    /// </summary>
+    /// <remarks>
+    /// Must not be <see langword="null"/>.
+    /// </remarks>
+    [XmlElement]
+    public BattManConf BatteryManager { get; set; } = new BattManConf();
 
     /// <summary>
     /// Parses an OpenBootCamp config XML and returns an
@@ -126,11 +133,22 @@ public sealed class ObcConfig
     /// This does NOT guarantee the loaded config is valid!
     /// </remarks>
     /// <returns>
-    /// <c>true</c> if the config is valid, otherwise <c>false</c>.
+    /// <see langword="true"></see> if the config is valid,
+    /// otherwise <see langword="false"></see>.
     /// </returns>
     private bool IsValid()
     {
-        if (Ver != ExpectedVer || KbdEventListener is null || FanControl is null)
+        // all OBC module configs must not be null,
+        // and the config version must match the expected version by the program
+        if (Ver != ExpectedVer || KbdEventListener is null ||
+            FanControl is null || BatteryManager is null)
+        {
+            return false;
+        }
+
+        // charge limit must be between 0 and 100%
+        // (although I don't see any point in making it lower than ~40%)
+        if (BatteryManager.ChargeLimit > 100)
         {
             return false;
         }

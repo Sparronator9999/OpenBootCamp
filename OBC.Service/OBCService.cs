@@ -40,6 +40,7 @@ internal sealed class OBCService : ServiceBase
 
     private KbdEventListener Listener;
     private FanController FanController;
+    private BattManager BattManager;
 
     private ObcConfig Config;
     private readonly string ConfPath = Path.Combine(
@@ -79,13 +80,13 @@ internal sealed class OBCService : ServiceBase
                 if (Config.DumpSMCKeys.HasFlag(SMCKeyDumpType.OnSvcStart))
                 {
                     DumpSMCKeys(SupportedSMCKeys);
-                            }
+                }
                 if (Config.DumpSMCKeys.HasFlag(SMCKeyDumpType.OnSvcStartDelayed))
-                        {
+                {
                     KeyDumpTimer.Interval = Config.KeyDumpDelayTime;
                     KeyDumpTimer.Start();
-                        }
-                    }
+                }
+            }
         }
 
         if (Config.KbdEventListener.Enabled)
@@ -98,6 +99,12 @@ internal sealed class OBCService : ServiceBase
         {
             FanController = new(Config.FanControl, Log, SMC);
             FanController.Start();
+        }
+
+        if (Config.BatteryManager.Enabled && SMC.IsOpen)
+        {
+            BattManager = new(Config.BatteryManager, Log, SMC);
+            BattManager.Start();
         }
         Log.Info(Strings.GetString("svcStarted"));
     }
@@ -117,6 +124,7 @@ internal sealed class OBCService : ServiceBase
         Log.Info(Strings.GetString("svcStopping"));
         Listener?.Stop();
         FanController?.Stop();
+        //BattManager?.Stop();
 
         KeyDumpTimer.Stop();
         if (Config.DumpSMCKeys.HasFlag(SMCKeyDumpType.OnSvcStop))
@@ -150,10 +158,12 @@ internal sealed class OBCService : ServiceBase
                 }
                 Listener?.Wake();
                 FanController?.Wake();
+                BattManager?.Wake();
                 break;
             case PowerBroadcastStatus.Suspend:
                 Listener?.Sleep();
                 FanController?.Sleep();
+                //BattManager?.Sleep();
                 if (Config.DumpSMCKeys.HasFlag(SMCKeyDumpType.OnSleep))
                 {
                     DumpSMCKeys(SupportedSMCKeys);
