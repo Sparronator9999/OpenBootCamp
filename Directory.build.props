@@ -1,0 +1,19 @@
+<Project>
+    <PropertyGroup>
+        <AnalysisLevel>latest-recommended</AnalysisLevel>
+        <Authors>Sparronator9999</Authors>
+        <Copyright>Copyright © 2024-2025 Sparronator9999</Copyright>
+        <EnableNETAnalyzers>True</EnableNETAnalyzers>
+        <LangVersion>13.0</LangVersion>
+        <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <RuntimeIdentifiers>win7-x64;win7-x86;win-x64;win-x86</RuntimeIdentifiers>
+        <TargetFramework>net48</TargetFramework>
+        <VersionPrefix>0.6.9.420</VersionPrefix>
+        <VersionSuffix>dev</VersionSuffix>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <DebugType>none</DebugType>
+    </PropertyGroup>
+</Project>

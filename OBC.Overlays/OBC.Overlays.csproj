@@ -1,26 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net48</TargetFramework>
-        <OutputType>WinExe</OutputType>
-        <LangVersion>13.0</LangVersion>
-        <EnableNETAnalyzers>true</EnableNETAnalyzers>
-        <AnalysisLevel>latest-recommended</AnalysisLevel>
-        <UseWindowsForms>true</UseWindowsForms>
-        <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
         <ApplicationIcon>obc.ico</ApplicationIcon>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
         <AssemblyName>ObcOverlay</AssemblyName>
         <AssemblyTitle>OpenBootCamp overlay service</AssemblyTitle>
-        <Authors>Sparronator9999</Authors>
-        <Copyright>Copyright © 2024-2025 Sparronator9999</Copyright>
-        <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
-        <PlatformTarget>AnyCPU</PlatformTarget>
-        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-        <VersionPrefix>0.6.9.420</VersionPrefix>
-        <VersionSuffix>dev</VersionSuffix>
-        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <OutputType>WinExe</OutputType>
+        <Title>OpenBootCamp overlay service</Title>
+        <UseWindowsForms>true</UseWindowsForms>
     </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\OBC.Common\OBC.Common.csproj" />
-    <ProjectReference Include="..\OBC.IPC\OBC.IPC.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\OBC.Common\OBC.Common.csproj"/>
+        <ProjectReference Include="..\OBC.IPC\OBC.IPC.csproj"/>
+    </ItemGroup>
 </Project>

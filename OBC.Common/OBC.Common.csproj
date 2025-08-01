@@ -1,27 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <AnalysisLevel>latest-recommended</AnalysisLevel>
-        <AssemblyTitle>OpenBootCamp common code library</AssemblyTitle>
-        <Authors>Sparronator9999</Authors>
-        <Copyright>Copyright © 2024-2025 Sparronator9999</Copyright>
-        <EnableNETAnalyzers>True</EnableNETAnalyzers>
-        <LangVersion>13.0</LangVersion>
-        <OutputType>Library</OutputType>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
-        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-        <RuntimeIdentifiers>win7-x64;win7-x86;win-x64;win-x86</RuntimeIdentifiers>
-        <TargetFramework>net48</TargetFramework>
+        <AssemblyTitle>OpenBootCamp common code library</AssemblyTitle>
+        <OutputType>Library</OutputType>
         <Title>OpenBootCamp common code library</Title>
-        <VersionPrefix>0.6.9.420</VersionPrefix>
-        <VersionSuffix>dev</VersionSuffix>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)'=='Release'">
-        <DebugType>none</DebugType>
     </PropertyGroup>
     <ItemGroup>
-      <Reference Include="System.Messaging" />
-      <Reference Include="System.ServiceProcess" />
-      <Reference Include="System.Windows.Forms" />
+        <Reference Include="System.Messaging"/>
+        <Reference Include="System.ServiceProcess"/>
+        <Reference Include="System.Windows.Forms"/>
     </ItemGroup>
 </Project>

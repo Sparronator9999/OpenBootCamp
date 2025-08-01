@@ -1,28 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net48</TargetFramework>
-        <OutputType>WinExe</OutputType>
-        <LangVersion>13.0</LangVersion>
-        <EnableNETAnalyzers>true</EnableNETAnalyzers>
-        <AnalysisLevel>latest-recommended</AnalysisLevel>
         <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
         <ApplicationIcon>obc.ico</ApplicationIcon>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
         <AssemblyName>ObcSvc</AssemblyName>
         <AssemblyTitle>OpenBootCamp core service</AssemblyTitle>
-        <Authors>Sparronator9999</Authors>
-        <Copyright>Copyright © 2024-2025 Sparronator9999</Copyright>
-        <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
-        <PlatformTarget>AnyCPU</PlatformTarget>
-        <ApplicationManifest>app.manifest</ApplicationManifest>
-        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-        <VersionPrefix>0.6.9.420</VersionPrefix>
-        <VersionSuffix>dev</VersionSuffix>
+        <OutputType>WinExe</OutputType>
+        <Title>OpenBootCamp core service</Title>
     </PropertyGroup>
     <ItemGroup>
-        <Reference Include="System.Configuration.Install" />
-        <Reference Include="System.Management" />
-        <Reference Include="System.ServiceProcess" />
-        <Reference Include="System.Windows.Forms" />
+        <Reference Include="System.Configuration.Install"/>
+        <Reference Include="System.Management"/>
+        <Reference Include="System.ServiceProcess"/>
+        <Reference Include="System.Windows.Forms"/>
     </ItemGroup>
     <ItemGroup>
         <Compile Update="ProjectInstaller.cs">
@@ -33,9 +23,9 @@
         </Compile>
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\OBC.Common\OBC.Common.csproj" />
-      <ProjectReference Include="..\OBC.InstallManager\OBC.InstallManager.csproj" />
-      <ProjectReference Include="..\OBC.IPC\OBC.IPC.csproj" />
-      <ProjectReference Include="..\OBC.Overlays\OBC.Overlays.csproj" />
+        <ProjectReference Include="..\OBC.Common\OBC.Common.csproj"/>
+        <ProjectReference Include="..\OBC.InstallManager\OBC.InstallManager.csproj"/>
+        <ProjectReference Include="..\OBC.IPC\OBC.IPC.csproj"/>
+        <ProjectReference Include="..\OBC.Overlays\OBC.Overlays.csproj"/>
     </ItemGroup>
 </Project>

@@ -95,9 +95,6 @@
       "obc.common": {
         "type": "Project"
       },
-      "obc.config": {
-        "type": "Project"
-      },
       "obc.ipc": {
         "type": "Project",
         "dependencies": {
@@ -111,6 +108,10 @@
           "OBC.IPC": "[2.1.3-release, )"
         }
       }
-    }
+    },
+    ".NETFramework,Version=v4.8/win-x64": {},
+    ".NETFramework,Version=v4.8/win-x86": {},
+    ".NETFramework,Version=v4.8/win7-x64": {},
+    ".NETFramework,Version=v4.8/win7-x86": {}
   }
 }
