@@ -77,7 +77,7 @@ internal sealed class KbdEventListener : IObcModule, IDisposable
     private bool Disposed;
 
     private readonly AppleKbdDriver KeyMagic = new("AppleKeyboard");
-    private readonly AppleKbdDriver KeyAgent = new("KeyAgent");
+    private AppleKbdDriver KeyAgent = new("KeyAgent");
     private readonly SMC SMC;
 
     private readonly Logger Log;
@@ -142,42 +142,47 @@ internal sealed class KbdEventListener : IObcModule, IDisposable
             Log.Error(Strings.GetString("errNoKM"), nameof(KbdEventListener));
         }
 
-        if (KeyAgent.Open())
+        if (!KeyAgent.Open())
         {
-            Log.Debug("Initalising events...", nameof(KbdEventListener));
-            for (int i = 0; i < Events.Length; i++)
+            // try KeyManager.sys, used on newer Boot Camp supported Macs
+            KeyAgent = new AppleKbdDriver("KeyManager");
+            if (!KeyAgent.Open())
             {
-                Events[i] = new AutoResetEvent(false);
+                Log.Warn(Strings.GetString("errNoKA"), nameof(KbdEventListener));
+                return;
             }
-
-            for (int i = 0; i < KbdEventIOCtls.Length; i++)
-            {
-                bool success = false;
-                Events[i].SafeWaitHandle.DangerousAddRef(ref success);
-                if (success)
-                {
-                    if (!KeyAgent.IOControl(KbdEventIOCtls[i], Events[i].SafeWaitHandle.DangerousGetHandle(), 0))
-                    {
-                        Log.Error(Strings.GetString("errEventInit"), nameof(KbdEventListener));
-                    }
-                }
-                else
-                {
-                    Log.Error(Strings.GetString("errEventHandle"), nameof(KbdEventListener));
-                }
-            }
-
-            Log.Debug("Starting event IPC server...", nameof(KbdEventListener));
-            IPCServer.Start();
-
-            ThreadStart ts = new(HandleEvents);
-            ListenerTask = new Thread(ts);
-            ListenerTask.Start();
+            Log.Warn(Strings.GetString("wrnKM"), nameof(KbdEventListener));
         }
-        else
+
+        Log.Debug("Initalising events...", nameof(KbdEventListener));
+        for (int i = 0; i < Events.Length; i++)
         {
-            Log.Warn(Strings.GetString("errNoKA"), nameof(KbdEventListener));
+            Events[i] = new AutoResetEvent(false);
         }
+
+        for (int i = 0; i < KbdEventIOCtls.Length; i++)
+        {
+            bool success = false;
+            Events[i].SafeWaitHandle.DangerousAddRef(ref success);
+            if (success)
+            {
+                if (!KeyAgent.IOControl(KbdEventIOCtls[i], Events[i].SafeWaitHandle.DangerousGetHandle(), 0))
+                {
+                    Log.Error(Strings.GetString("errEventInit"), nameof(KbdEventListener));
+                }
+            }
+            else
+            {
+                Log.Error(Strings.GetString("errEventHandle"), nameof(KbdEventListener));
+            }
+        }
+
+        Log.Debug("Starting event IPC server...", nameof(KbdEventListener));
+        IPCServer.Start();
+
+        ThreadStart ts = new(HandleEvents);
+        ListenerTask = new Thread(ts);
+        ListenerTask.Start();
     }
 
     public void Stop()

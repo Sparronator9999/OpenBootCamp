@@ -143,7 +143,7 @@ Please run this service from 'InstallMgr' (should be in the same folder as this 
     <value>DeviceIoControl failed: {0}</value>
   </data>
   <data name="errNoKA" xml:space="preserve">
-    <value>Failed to connect to KeyAgent.sys!
+    <value>Failed to connect to KeyAgent.sys and KeyManager.sys!
 Some special Fn keys will not work!</value>
   </data>
   <data name="errNoKM" xml:space="preserve">
@@ -213,5 +213,10 @@ The default settings will be used.</value>
   <data name="wrnNoKeyLight" xml:space="preserve">
     <value>SMC reports that keyboard backlight adjustment is not supported. 
 Keyboard backlight adjustments will be unavailable!</value>
+  </data>
+  <data name="wrnKM" xml:space="preserve">
+    <value>OBC is using KeyManager.sys for special Fn key handling.
+KeyManager has not been tested as well as KeyAgent due to lack of test devices.
+Please report any issues to https://github.com/Sparronator9999/OpenBootCamp</value>
   </data>
 </root>
