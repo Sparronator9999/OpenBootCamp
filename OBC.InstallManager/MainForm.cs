@@ -237,19 +237,14 @@ public partial class MainForm : Form
         {
             btnKAInstall.Text = "Installing";
 
-            if (!await Task.Run(() => InstallDriver(
-                @"BootCamp\KeyAgent.sys", ServiceStartMode.Automatic)))
-            {
-                Utils.ShowError("Failed to install KeyAgent.sys!");
-            }
+            // errors are displayed via the InstallDriver function
+            await Task.Run(() => InstallDriver(
+                @"BootCamp\KeyAgent.sys", ServiceStartMode.Automatic));
         }
         else
         {
             btnKAInstall.Text = "Uninstalling";
-            if (!await Task.Run(() => UninstallDriver("KeyAgent.sys")))
-            {
-                Utils.ShowError("Failed to uninstall KeyAgent.sys!");
-            }
+            await Task.Run(() => UninstallDriver("KeyAgent.sys"));
         }
         SetStatusLabel("KeyAgent", true, lblKAState, btnKAInstall);
         btnKAInstall.Enabled = true;
@@ -262,25 +257,19 @@ public partial class MainForm : Form
         {
             btnMHDInstall.Text = "Installing";
             // MacHALDriver is installed as boot-start by official Boot Camp
-            if (!await Task.Run(() => InstallDriver(
-                @"BootCamp\MacHALDriver.sys", ServiceStartMode.Boot)))
-            {
-                Utils.ShowError("Failed to install MacHALDriver.sys!");
-            }
+            await Task.Run(() => InstallDriver(
+                @"BootCamp\MacHALDriver.sys", ServiceStartMode.Boot));
         }
         else
         {
             btnMHDInstall.Text = "Uninstalling";
-            if (!await Task.Run(() => UninstallDriver("MacHALDriver.sys")))
-            {
-                Utils.ShowError("Failed to uninstall MacHALDriver.sys!");
-            }
+            await Task.Run(() => UninstallDriver("MacHALDriver.sys"));
         }
         SetStatusLabel("MacHALDriver", true, lblMHDState, btnMHDInstall);
         btnMHDInstall.Enabled = true;
     }
 
-    private static bool InstallDriver(string srcPath, ServiceStartMode startMode = ServiceStartMode.Manual)
+    private static void InstallDriver(string srcPath, ServiceStartMode startMode = ServiceStartMode.Manual)
     {
         srcPath = Path.GetFullPath(srcPath);
         string driverName = Path.GetFileName(srcPath);
@@ -295,27 +284,26 @@ public partial class MainForm : Form
             catch (FileNotFoundException)
             {
                 Utils.ShowError($"Could not find driver: {srcPath}");
-                return false;
+                return;
             }
 
             if (!driver.Install(startMode))
             {
                 Utils.ShowError($"Failed to install {driverName}!");
-                return false;
+                return;
             }
             Utils.ShowInfo(Strings.GetString(
                 "drvInstallReboot", driverName), "Success");
-            return true;
         }
     }
 
-    private static bool UninstallDriver(string name)
+    private static void UninstallDriver(string name)
     {
         if (Utils.ShowWarning(
             $"Are you sure you want to uninstall {name}?",
             "Uninstall?") != DialogResult.Yes)
         {
-            return true;
+            return;
         }
 
         string path = $"C:\\Windows\\System32\\drivers\\{name}";
@@ -325,7 +313,7 @@ public partial class MainForm : Form
             if (!driver.Uninstall())
             {
                 Utils.ShowError($"Failed to uninstall {name}!");
-                return false;
+                return;
             }
 
             try
@@ -344,7 +332,6 @@ public partial class MainForm : Form
                 Utils.ShowInfo(Strings.GetString(
                     "drvUninstallReboot", name), "Success");
             }
-            return true;
         }
     }
 
