@@ -238,17 +238,18 @@ public partial class MainForm : Form
             btnKAInstall.Text = "Installing";
 
             // errors are displayed via the InstallDriver function
-            if (File.Exists(@"BootCamp\KeyManager.sys") && Utils.ShowInfo(
+            DialogResult result = Utils.ShowInfo(
                 "The newer KeyManager.sys driver was found in your BootCamp folder." +
                 "This driver replaces KeyAgent.sys on newer Macs, but is untested with OpenBootCamp.\n\n" +
                 "Would you like to install KeyManager.sys?\n" +
                 "(click `No` to install the old KeyAgent.sys instead, if present)",
-                "KeyManager.sys?", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                "KeyManager.sys?", MessageBoxButtons.YesNoCancel);
+            if (result == DialogResult.Yes && File.Exists(@"BootCamp\KeyManager.sys"))
             {
                 await Task.Run(() => InstallDriver(
                     @"BootCamp\KeyManager.sys", ServiceStartMode.Automatic));
             }
-            else
+            else if (result == DialogResult.No)
             {
                 await Task.Run(() => InstallDriver(
                     @"BootCamp\KeyAgent.sys", ServiceStartMode.Automatic));
